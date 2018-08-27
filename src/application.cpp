@@ -2,6 +2,7 @@
 #include "vk_context.hpp"
 #include <stdexcept>
 #include <iostream>
+#include <vector>
 
 Application::Application(AppSettings const& settings)
     : settings_(settings)
@@ -20,8 +21,9 @@ Application::Application(AppSettings const& settings)
     // Get GLFW requested extensions
     std::uint32_t glfw_extension_count;
     char const** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+    std::vector<char const*> required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
-    context_.reset(new VkContext(settings, glfw_extensions, glfw_extension_count));
+    context_.reset(new VkContext(settings, required_extensions));
 
     if (!window_.get())
     {
