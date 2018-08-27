@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
 
 int main()
 {
@@ -46,6 +47,22 @@ int main()
         PRINT_PROPERTY(device_properties.vendorID);
 
     }
+
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "VulkanLabs", nullptr, nullptr);
+    while (!glfwWindowShouldClose(window))
+    {
+
+        // Swap buffers
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Terminate GLFW
+    glfwTerminate();
 
     return 0;
 }
