@@ -2,14 +2,20 @@ project(VulkanLabs CXX)
 
 cmake_minimum_required(VERSION 3.8)
 
-set(SOURCES
-    src/main.cpp
-)
-
 list(APPEND CMAKE_MODULE_PATH "${VulkanLabs_SOURCE_DIR}/cmake")
 
 find_package(Vulkan)
 find_package(glfw3)
+
+set(SOURCES
+    src/app_settings.hpp
+    src/application.cpp
+    src/application.hpp
+    src/context.hpp
+    src/vk_context.cpp
+    src/vk_context.hpp
+    src/main.cpp
+)
 
 add_executable(VulkanLabs ${SOURCES})
 target_include_directories(VulkanLabs PUBLIC "${VulkanLabs_SOURCE_DIR}/src")
