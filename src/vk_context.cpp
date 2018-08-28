@@ -9,6 +9,45 @@
         throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
     }
 
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData)
+{
+
+    std::cerr << "[Validation layer]: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
+}
+
+VkResult CreateDebugUtilsMessengerEXT(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkDebugUtilsMessengerEXT* pCallback)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pCallback);
+    }
+    else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT callback,
+    const VkAllocationCallbacks* pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, callback, pAllocator);
+    }
+}
+
 VkContext::VkContext(AppSettings const& settings, std::vector<char const*> required_extensions)
 {
     // Setup VkApplicationInfo
@@ -25,7 +64,7 @@ VkContext::VkContext(AppSettings const& settings, std::vector<char const*> requi
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
     SetupValidationLayers(create_info);
-    
+
     // Add extension that required by validation layers message callback
     if constexpr (enable_validation_)
     {
@@ -38,6 +77,27 @@ VkContext::VkContext(AppSettings const& settings, std::vector<char const*> requi
     VkResult error_code;
     error_code = vkCreateInstance(&create_info, nullptr, &instance_);
     THROW_IF_FAILED(error_code, "Failed to create VkInstance!");
+
+    if constexpr (enable_validation_)
+    {
+        // Create debug utils messenger
+        VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+        createInfo.pfnUserCallback = DebugCallback;
+        createInfo.pUserData = nullptr;
+
+        error_code = CreateDebugUtilsMessengerEXT(instance_, &createInfo, nullptr, &debug_messenger_);
+        THROW_IF_FAILED(error_code, "Failed to create debug messenger!");
+    }
 
     // Get extension count
     uint32_t extension_count = 0;
@@ -75,11 +135,16 @@ VkContext::VkContext(AppSettings const& settings, std::vector<char const*> requi
 
 VkContext::~VkContext()
 {
+    if constexpr (enable_validation_)
+    {
+        DestroyDebugUtilsMessengerEXT(instance_, debug_messenger_, nullptr);
+    }
+
     // Destroy Vulkan instance
     vkDestroyInstance(instance_, nullptr);
 }
 
-void VkContext::SetupValidationLayers(VkInstanceCreateInfo& create_info)
+void VkContext::SetupValidationLayers(VkInstanceCreateInfo& instance_create_info)
 {
     if constexpr (enable_validation_)
     {
@@ -112,12 +177,12 @@ void VkContext::SetupValidationLayers(VkInstanceCreateInfo& create_info)
             }
         }
 
-        create_info.ppEnabledLayerNames = validation_layers.data();
-        create_info.enabledLayerCount = static_cast<std::uint32_t>(validation_layers.size());
+        instance_create_info.ppEnabledLayerNames = validation_layers.data();
+        instance_create_info.enabledLayerCount = static_cast<std::uint32_t>(validation_layers.size());
 
     }
     else
     {
-        create_info.enabledLayerCount = 0;
+        instance_create_info.enabledLayerCount = 0;
     }
 }

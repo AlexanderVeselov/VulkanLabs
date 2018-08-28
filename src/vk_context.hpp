@@ -17,6 +17,7 @@ private:
 
 private:
     VkInstance instance_ = nullptr;
+    VkDebugUtilsMessengerEXT debug_messenger_ = nullptr;
 #ifdef NDEBUG
     static const bool enable_validation_ = false;
 #else
