@@ -2,6 +2,8 @@ project(VulkanLabs CXX)
 
 cmake_minimum_required(VERSION 3.8)
 
+set_property( GLOBAL PROPERTY USE_FOLDERS ON)
+
 list(APPEND CMAKE_MODULE_PATH "${VulkanLabs_SOURCE_DIR}/cmake")
 
 find_package(Vulkan)
