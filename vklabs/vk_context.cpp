@@ -12,46 +12,6 @@ namespace vklabs
         throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
     }
 
-#if VALIDATION_ENABLED
-    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData)
-    {
-
-        std::cerr << "[Validation layer]: " << pCallbackData->pMessage << std::endl;
-
-        return VK_FALSE;
-    }
-
-    VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pCallback)
-    {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            return func(instance, pCreateInfo, pAllocator, pCallback);
-        }
-        else {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-    }
-
-    void DestroyDebugUtilsMessengerEXT(
-        VkInstance instance,
-        VkDebugUtilsMessengerEXT callback,
-        const VkAllocationCallbacks* pAllocator)
-    {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            func(instance, callback, pAllocator);
-        }
-    }
-#endif
-
     VkContext::VkContext(std::vector<char const*> const& required_extensions)
     {
         // Create basic vulkan instance
@@ -142,37 +102,32 @@ namespace vklabs
 
     void VkContext::SetupValidationLayers(VkInstanceCreateInfo& instance_create_info)
     {
-            static const std::vector<char const*> validation_layers =
+        std::uint32_t layer_count;
+        vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+        std::vector<VkLayerProperties> available_layers(layer_count);
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+        for (auto const& required_layer : g_validation_layers)
+        {
+            bool layer_found = false;
+            for (auto const& available_layer : available_layers)
             {
-                "VK_LAYER_LUNARG_standard_validation"
-            };
-
-            std::uint32_t layer_count;
-            vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-            std::vector<VkLayerProperties> available_layers(layer_count);
-            vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-            for (auto const& required_layer : validation_layers)
-            {
-                bool layer_found = false;
-                for (auto const& available_layer : available_layers)
+                if (strcmp(required_layer, available_layer.layerName) == 0)
                 {
-                    if (strcmp(required_layer, available_layer.layerName) == 0)
-                    {
-                        layer_found = true;
-                        break;
-                    }
-                }
-
-                if (!layer_found)
-                {
-                    throw std::runtime_error("VkContext::SetupValidationLayers(...): required layer '"
-                        + std::string(required_layer) + "'is not available");
+                    layer_found = true;
+                    break;
                 }
             }
 
-            instance_create_info.ppEnabledLayerNames = validation_layers.data();
-            instance_create_info.enabledLayerCount = static_cast<std::uint32_t>(validation_layers.size());
+            if (!layer_found)
+            {
+                throw std::runtime_error("VkContext::SetupValidationLayers(...): required layer '"
+                    + std::string(required_layer) + "'is not available");
+            }
+        }
+
+        instance_create_info.ppEnabledLayerNames = g_validation_layers.data();
+        instance_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
 
     }
 #endif

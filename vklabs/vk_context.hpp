@@ -4,14 +4,9 @@
 #include "context.hpp"
 #include "app_settings.hpp"
 #include "vk_shared_object.hpp"
+#include "vk_validation.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
-
-#ifdef NDEBUG
-#define VALIDATION_ENABLED 0
-#else
-#define VALIDATION_ENABLED 0
-#endif
 
 namespace vklabs
 {

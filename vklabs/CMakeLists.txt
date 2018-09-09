@@ -3,6 +3,7 @@ set(SOURCES
     context.hpp
     vk_context.cpp
     vk_context.hpp
+    vk_validation.hpp
     device.hpp
     vk_device.cpp
     vk_device.hpp
