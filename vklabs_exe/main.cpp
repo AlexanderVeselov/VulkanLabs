@@ -1,5 +1,5 @@
-#include <iostream>
 #include "application.hpp"
+#include <iostream>
 
 int main(int argc, char** argv)
 {
@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 
     try
     {
-        Application application(settings);
+        vklabs::Application application(settings);
         application.Run();
 
     }
