@@ -1,4 +1,5 @@
 #include "vk_context.hpp"
+#include "vk_device.hpp"
 #include <iostream>
 #include <vector>
 #include <stdexcept>
@@ -11,7 +12,7 @@ namespace vklabs
         throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
     }
 
-
+#if VALIDATION_ENABLED
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -49,17 +50,17 @@ namespace vklabs
             func(instance, callback, pAllocator);
         }
     }
+#endif
 
-    VkContext::VkContext(AppSettings const& settings, std::vector<char const*> required_extensions)
+    VkContext::VkContext(std::vector<char const*> const& required_extensions)
     {
         // Create basic vulkan instance
-        CreateInstance(settings.app_name, required_extensions);
+        CreateInstance(required_extensions);
 
+#if VALIDATION_ENABLED
         // Create debug messenger
-        if (ValidationEnabled())
-        {
-            CreateDebugMessenger();
-        }
+        CreateDebugMessenger();
+#endif
 
         // Find available extensions
         FindAvailableExtensions();
@@ -67,74 +68,40 @@ namespace vklabs
         // Find physical devices
         FindPhysicalDevices();
 
-        std::uint32_t queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_devices_[0], &queue_family_count, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_devices_[0], &queue_family_count, queue_families.data());
-
-        for (auto const& prop : queue_families)
-        {
-            std::cout << prop.queueFlags << ": ";
-            if ((prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
-            {
-                std::cout << "VK_QUEUE_GRAPHICS_BIT ";
-            }
-            if ((prop.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
-            {
-                std::cout << "VK_QUEUE_COMPUTE_BIT ";
-            }
-            if ((prop.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
-            {
-                std::cout << "VK_QUEUE_TRANSFER_BIT ";
-            }
-            if ((prop.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == VK_QUEUE_SPARSE_BINDING_BIT)
-            {
-                std::cout << "VK_QUEUE_SPARSE_BINDING_BIT ";
-            }
-            if ((prop.queueFlags & VK_QUEUE_PROTECTED_BIT) == VK_QUEUE_PROTECTED_BIT)
-            {
-                std::cout << "VK_QUEUE_PROTECTED_BIT ";
-            }
-            std::cout << std::endl;
-        }
-
     }
 
     VkContext::~VkContext()
     {
-        if (ValidationEnabled())
-        {
-            DestroyDebugUtilsMessengerEXT(instance_.get(), debug_messenger_, nullptr);
-        }
-
-        // Destroy Vulkan instance
-        //vkDestroyInstance(instance_, nullptr);
+#if VALIDATION_ENABLED
+        DestroyDebugUtilsMessengerEXT(instance_.get(), debug_messenger_, nullptr);
+#endif
     }
 
-    void VkContext::CreateInstance(std::string const& application_name,
-        std::vector<char const*> required_extensions)
+    void VkContext::CreateInstance(std::vector<char const*> required_extensions)
     {
         // Setup VkApplicationInfo
         VkApplicationInfo app_info = {};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = application_name.c_str();
+        app_info.pApplicationName = "CGLabs";
         app_info.applicationVersion = 1;
         app_info.pEngineName = "No Engine";
         app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         app_info.apiVersion = VK_API_VERSION_1_0;
 
         // Create Vulkan instance
+
         VkInstanceCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.pApplicationInfo = &app_info;
-        SetupValidationLayers(create_info);
+        // CHECK: What does The Standard say about
+        // struct initialization with empty braces {}?
+        create_info.enabledLayerCount = 0;
 
+#if VALIDATION_ENABLED
+        SetupValidationLayers(create_info);
         // Add extension that required by validation layers message callback
-        if (ValidationEnabled())
-        {
-            required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
+        required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
 
         create_info.ppEnabledExtensionNames = required_extensions.data();
         create_info.enabledExtensionCount = static_cast<std::uint32_t>(required_extensions.size());
@@ -150,6 +117,7 @@ namespace vklabs
         });
     }
 
+#if VALIDATION_ENABLED
     void VkContext::CreateDebugMessenger()
     {
         // Create debug utils messenger
@@ -174,8 +142,6 @@ namespace vklabs
 
     void VkContext::SetupValidationLayers(VkInstanceCreateInfo& instance_create_info)
     {
-        if (ValidationEnabled())
-        {
             static const std::vector<char const*> validation_layers =
             {
                 "VK_LAYER_LUNARG_standard_validation"
@@ -208,12 +174,8 @@ namespace vklabs
             instance_create_info.ppEnabledLayerNames = validation_layers.data();
             instance_create_info.enabledLayerCount = static_cast<std::uint32_t>(validation_layers.size());
 
-        }
-        else
-        {
-            instance_create_info.enabledLayerCount = 0;
-        }
     }
+#endif
 
     void VkContext::FindAvailableExtensions()
     {
@@ -249,9 +211,16 @@ namespace vklabs
         {
             VkPhysicalDeviceProperties device_properties;
             vkGetPhysicalDeviceProperties(device, &device_properties);
-            std::cout << "VkContext::VkContext(...): Found physical device:\n" << device_properties.deviceName << std::endl;
+            std::cout << "VkContext::VkContext(...): Found physical device:\n"
+                << device_properties.deviceName << std::endl;
 
         }
+    }
+
+    std::shared_ptr<Device> VkContext::CreateDevice(std::size_t index,
+        std::vector<char const*> const& required_extensions)
+    {
+        return std::make_shared<VkDevice>(index, physical_devices_[index], required_extensions);
     }
 
 }

@@ -10,7 +10,8 @@ namespace vklabs
     class VkDevice : public Device
     {
     public:
-        VkDevice(std::uint32_t id, std::vector<char const*> required_extensions, VkPhysicalDevice physical_device);
+        VkDevice(std::size_t id, VkPhysicalDevice physical_device,
+            std::vector<char const*> required_extensions);
         ~VkDevice();
 
     private:

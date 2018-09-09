@@ -7,20 +7,29 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+#ifdef NDEBUG
+#define VALIDATION_ENABLED 0
+#else
+#define VALIDATION_ENABLED 0
+#endif
+
 namespace vklabs
 {
     class VkContext : public Context
     {
     public:
-        VkContext(AppSettings const& settings, std::vector<char const*> required_extensions);
+        VkContext(std::vector<char const*> const& required_extensions);
         ~VkContext();
 
-        bool ValidationEnabled() const { return enable_validation_; }
+        std::shared_ptr<Device> CreateDevice(std::size_t index,
+            std::vector<char const*> const& required_extensions) override;
 
     private:
-        void CreateInstance(std::string const& application_name, std::vector<char const*> required_extensions);
+        void CreateInstance(std::vector<char const*> required_extensions);
+#if VALIDATION_ENABLED
         void CreateDebugMessenger();
         void SetupValidationLayers(VkInstanceCreateInfo& create_info);
+#endif
         void FindAvailableExtensions();
         void FindPhysicalDevices();
 
@@ -29,11 +38,6 @@ namespace vklabs
         VkDebugUtilsMessengerEXT debug_messenger_ = nullptr;
         std::vector<VkExtensionProperties> available_extensions_;
         std::vector<VkPhysicalDevice> physical_devices_;
-#ifdef NDEBUG
-        static const bool enable_validation_ = false;
-#else
-        static const bool enable_validation_ = true;
-#endif
 
     };
 
