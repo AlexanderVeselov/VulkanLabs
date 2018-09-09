@@ -11,5 +11,5 @@ set(SOURCES
 
 add_library(VulkanLabs STATIC ${SOURCES})
 target_include_directories(VulkanLabs PUBLIC .)
-target_link_libraries(VulkanLabs Vulkan::Vulkan glfw3::glfw3)
+target_link_libraries(VulkanLabs Vulkan::Vulkan)
 target_compile_features(VulkanLabs PUBLIC cxx_std_17)

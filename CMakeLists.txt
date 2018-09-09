@@ -6,8 +6,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${VulkanLabs_SOURCE_DIR}/cmake")
 
-find_package(Vulkan)
-find_package(glfw3)
+find_package(Vulkan REQUIRED)
+find_package(glfw3 REQUIRED)
 
 add_subdirectory(dependencies/googletest)
 add_subdirectory(vklabs)
