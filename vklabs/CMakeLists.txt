@@ -8,6 +8,7 @@ set(SOURCES
     vk_device.cpp
     vk_device.hpp
     vk_shared_object.hpp
+    vk_exception.hpp
 )
 
 add_library(VulkanLabs STATIC ${SOURCES})

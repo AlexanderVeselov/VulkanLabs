@@ -1,56 +1,100 @@
 #include "vk_device.hpp"
+#include "vk_exception.hpp"
+#include "vk_validation.hpp"
 #include <iostream>
 #include <vector>
-#include <stdexcept>
 
 namespace vklabs
 {
-#define THROW_IF_FAILED(err_code, msg) \
-    if ((err_code) != VK_SUCCESS)      \
-    {                                  \
-        throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
-    }
-
     VkDevice::VkDevice(std::size_t id, VkPhysicalDevice physical_device,
         std::vector<char const*> required_extensions)
         : physical_device_(physical_device)
     {
+        FindQueueFamilyIndices();
+        VkDeviceQueueCreateInfo queue_create_info = {};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        std::array<std::uint32_t, 2> queue_family_indices =
+        {
+            GetGraphicsQueueFamilyIndex(),
+            GetComputeQueueFamilyIndex()
+        };
 
+        VkDeviceCreateInfo device_create_info = {};
+        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+        //device_create_info.queueCreateInfoCount = ..;
+        //device_create_info.pQueueCreateInfos = ...;
+        device_create_info.enabledLayerCount = 0;
+#if VALIDATION_ENABLED
+        device_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
+        device_create_info.ppEnabledLayerNames = g_validation_layers.data();
+#endif
+
+        ::VkDevice device = nullptr;
+        VkResult result = vkCreateDevice(physical_device_, &device_create_info, nullptr, &device);
+        VK_THROW_IF_FAILED(result, "Failed to create VkDevice!");
+
+        logical_device_.reset(device, [](::VkDevice device)
+        {
+            vkDestroyDevice(device, nullptr);
+        });
+
+    }
+
+    void VkDevice::FindQueueFamilyIndices()
+    {
         std::uint32_t queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
 
         std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_families.data());
 
-        for (auto const& prop : queue_families)
+        for (std::size_t i = 0; i < queue_families.size(); ++i)
         {
-            std::cout << prop.queueFlags << ": ";
-            if ((prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
+            if ((queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
             {
-                std::cout << "VK_QUEUE_GRAPHICS_BIT ";
+                queue_family_indices_[VK_QUEUE_GRAPHICS_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((prop.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
+            if ((queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
             {
-                std::cout << "VK_QUEUE_COMPUTE_BIT ";
+                queue_family_indices_[VK_QUEUE_COMPUTE_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((prop.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
+            if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
             {
-                std::cout << "VK_QUEUE_TRANSFER_BIT ";
+                queue_family_indices_[VK_QUEUE_TRANSFER_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((prop.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == VK_QUEUE_SPARSE_BINDING_BIT)
+            if ((queue_families[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == VK_QUEUE_SPARSE_BINDING_BIT)
             {
-                std::cout << "VK_QUEUE_SPARSE_BINDING_BIT ";
+                queue_family_indices_[VK_QUEUE_SPARSE_BINDING_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((prop.queueFlags & VK_QUEUE_PROTECTED_BIT) == VK_QUEUE_PROTECTED_BIT)
+            if ((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) == VK_QUEUE_PROTECTED_BIT)
             {
-                std::cout << "VK_QUEUE_PROTECTED_BIT ";
+                queue_family_indices_[VK_QUEUE_PROTECTED_BIT] = static_cast<std::uint32_t>(i);
             }
-            std::cout << std::endl;
         }
     }
 
-    VkDevice::~VkDevice()
+    std::uint32_t VkDevice::GetGraphicsQueueFamilyIndex() const
     {
-    }
+        auto it = queue_family_indices_.find(VK_QUEUE_GRAPHICS_BIT);
+
+        if (it == queue_family_indices_.end())
+        {
+            VK_THROW_IF_FAILED(VK_ERROR_INITIALIZATION_FAILED, "Graphics queue family doesn't exist!");
+        }
+
+        return it->second;
+    };
+
+    std::uint32_t VkDevice::GetComputeQueueFamilyIndex() const
+    {
+        auto it = queue_family_indices_.find(VK_QUEUE_COMPUTE_BIT);
+        if (it == queue_family_indices_.end())
+        {
+            VK_THROW_IF_FAILED(VK_ERROR_INITIALIZATION_FAILED, "Compute queue family doesn't exist!");
+        }
+
+        return it->second;
+    };
 
 }

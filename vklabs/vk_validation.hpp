@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vulkan/vulkan.h>
 
-static const std::array<char const*, 1> g_validation_layers =
+constexpr std::array<char const*, 1> g_validation_layers =
 {
 #if VALIDATION_ENABLED
     "VK_LAYER_LUNARG_standard_validation"
@@ -59,4 +59,4 @@ inline void DestroyDebugUtilsMessengerEXT(
 }
 #endif
 
-#endif // VK_VALIDATION_HPP
+#endif // VK_VALIDATION_HPP_

@@ -1,17 +1,11 @@
 #include "vk_context.hpp"
 #include "vk_device.hpp"
+#include "vk_exception.hpp"
 #include <iostream>
 #include <vector>
-#include <stdexcept>
 
 namespace vklabs
 {
-#define THROW_IF_FAILED(err_code, msg) \
-    if ((err_code) != VK_SUCCESS)      \
-    {                                  \
-        throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
-    }
-
     VkContext::VkContext(std::vector<char const*> const& required_extensions)
     {
         // Create basic vulkan instance
@@ -68,7 +62,7 @@ namespace vklabs
 
         VkInstance instance;
         VkResult error_code = vkCreateInstance(&create_info, nullptr, &instance);
-        THROW_IF_FAILED(error_code, "Failed to create VkInstance!");
+        VK_THROW_IF_FAILED(error_code, "Failed to create VkInstance!");
 
         instance_.reset(instance, [](VkInstance instance)
         {
@@ -96,7 +90,7 @@ namespace vklabs
         messenger_create_info.pUserData = nullptr;
 
         VkResult error_code = CreateDebugUtilsMessengerEXT(instance_.get(), &messenger_create_info, nullptr, &debug_messenger_);
-        THROW_IF_FAILED(error_code, "Failed to create debug messenger!");
+        VK_THROW_IF_FAILED(error_code, "Failed to create debug messenger!");
 
     }
 
@@ -137,7 +131,7 @@ namespace vklabs
         // Get extension count
         uint32_t extension_count = 0;
         VkResult error_code = vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
-        THROW_IF_FAILED(error_code, "Failed to enumerate instance extension properties!");
+        VK_THROW_IF_FAILED(error_code, "Failed to enumerate instance extension properties!");
 
         // Get available extensions
         available_extensions_.resize(extension_count);
@@ -156,7 +150,7 @@ namespace vklabs
         // Get physical device count
         std::uint32_t physical_device_count = 0;
         VkResult error_code = vkEnumeratePhysicalDevices(instance_.get(), &physical_device_count, nullptr);
-        THROW_IF_FAILED(error_code, "Failed to enumerate physical devices!");
+        VK_THROW_IF_FAILED(error_code, "Failed to enumerate physical devices!");
 
         // Print physical device information
         physical_devices_.resize(physical_device_count);
