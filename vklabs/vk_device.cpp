@@ -36,6 +36,11 @@ namespace vklabs
         VkDeviceCreateInfo device_create_info = {};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
+        constexpr std::array<char const*, 1> device_extension_names =
+        {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        };
+
         device_create_info.queueCreateInfoCount = static_cast<std::uint32_t>(queue_create_infos.size());
         device_create_info.pQueueCreateInfos = queue_create_infos.data();
         device_create_info.enabledLayerCount = 0;
@@ -43,6 +48,8 @@ namespace vklabs
         device_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
         device_create_info.ppEnabledLayerNames = g_validation_layers.data();
 #endif
+        device_create_info.enabledExtensionCount = static_cast<std::uint32_t>(device_extension_names.size());
+        device_create_info.ppEnabledExtensionNames = device_extension_names.data();
 
         ::VkDevice device = nullptr;
         VkResult result = vkCreateDevice(physical_device_, &device_create_info, nullptr, &device);

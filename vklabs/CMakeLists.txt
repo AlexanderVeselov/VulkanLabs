@@ -1,14 +1,17 @@
 set(SOURCES
     app_settings.hpp
+    vk_validation.hpp
+    vk_shared_object.hpp
+    vk_exception.hpp
     context.hpp
     vk_context.cpp
     vk_context.hpp
-    vk_validation.hpp
     device.hpp
     vk_device.cpp
     vk_device.hpp
-    vk_shared_object.hpp
-    vk_exception.hpp
+    swapchain.hpp
+    vk_swapchain.cpp
+    vk_swapchain.hpp
 )
 
 add_library(VulkanLabs STATIC ${SOURCES})

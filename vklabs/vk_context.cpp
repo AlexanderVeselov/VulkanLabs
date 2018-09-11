@@ -1,5 +1,6 @@
 #include "vk_context.hpp"
 #include "vk_device.hpp"
+#include "vk_swapchain.hpp"
 #include "vk_exception.hpp"
 #include <iostream>
 #include <vector>
@@ -167,9 +168,14 @@ namespace vklabs
     }
 
     std::shared_ptr<Device> VkContext::CreateDevice(std::size_t index,
-        std::vector<char const*> const& required_extensions)
+        std::vector<char const*> const& required_extensions) const
     {
         return std::make_shared<VkDevice>(index, physical_devices_[index], required_extensions);
+    }
+
+    std::shared_ptr<Swapchain> VkContext::CreateSwapchain() const
+    {
+        return std::make_shared<VkSwapchain>();
     }
 
 }

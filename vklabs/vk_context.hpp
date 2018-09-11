@@ -17,7 +17,9 @@ namespace vklabs
         ~VkContext();
 
         std::shared_ptr<Device> CreateDevice(std::size_t index,
-            std::vector<char const*> const& required_extensions) override;
+            std::vector<char const*> const& required_extensions) const override;
+
+        std::shared_ptr<Swapchain> CreateSwapchain() const;
 
     private:
         void CreateInstance(std::vector<char const*> required_extensions);
