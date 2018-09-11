@@ -5,7 +5,7 @@
 #include "vk_shared_object.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 namespace vklabs
 {
@@ -25,7 +25,7 @@ namespace vklabs
     private:
         VkPhysicalDevice physical_device_;
         VkSharedObject<::VkDevice> logical_device_;
-        std::map<VkQueueFlags, std::uint32_t> queue_family_indices_;
+        std::unordered_map<VkQueueFlags, std::uint32_t> queue_family_indices_;
 
     };
 

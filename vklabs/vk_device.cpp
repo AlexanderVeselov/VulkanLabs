@@ -11,19 +11,33 @@ namespace vklabs
         : physical_device_(physical_device)
     {
         FindQueueFamilyIndices();
-        VkDeviceQueueCreateInfo queue_create_info = {};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
         std::array<std::uint32_t, 2> queue_family_indices =
         {
             GetGraphicsQueueFamilyIndex(),
             GetComputeQueueFamilyIndex()
         };
 
+        std::uint32_t queue_family_count =
+            (queue_family_indices[0] == queue_family_indices[1]) ? 1 : 2;
+
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos(queue_family_count);
+        for (std::uint32_t i = 0; i < queue_family_count; ++i)
+        {
+            queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_infos[i].pNext = nullptr;
+            queue_create_infos[i].flags = 0;
+            queue_create_infos[i].queueFamilyIndex = queue_family_indices[i];
+            queue_create_infos[i].queueCount = 1;
+            constexpr float queue_priority = 0.0f;
+            queue_create_infos[i].pQueuePriorities = &queue_priority;
+        }
+
         VkDeviceCreateInfo device_create_info = {};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-        //device_create_info.queueCreateInfoCount = ..;
-        //device_create_info.pQueueCreateInfos = ...;
+        device_create_info.queueCreateInfoCount = static_cast<std::uint32_t>(queue_create_infos.size());
+        device_create_info.pQueueCreateInfos = queue_create_infos.data();
         device_create_info.enabledLayerCount = 0;
 #if VALIDATION_ENABLED
         device_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
@@ -36,6 +50,7 @@ namespace vklabs
 
         logical_device_.reset(device, [](::VkDevice device)
         {
+            std::cout << "Destroying logical device" << std::endl;
             vkDestroyDevice(device, nullptr);
         });
 
@@ -51,23 +66,28 @@ namespace vklabs
 
         for (std::size_t i = 0; i < queue_families.size(); ++i)
         {
-            if ((queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
+            if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT
+                && queue_family_indices_.find(VK_QUEUE_GRAPHICS_BIT) == queue_family_indices_.end())
             {
                 queue_family_indices_[VK_QUEUE_GRAPHICS_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
+            if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT
+                && queue_family_indices_.find(VK_QUEUE_COMPUTE_BIT) == queue_family_indices_.end())
             {
                 queue_family_indices_[VK_QUEUE_COMPUTE_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
+            if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT
+                && queue_family_indices_.find(VK_QUEUE_TRANSFER_BIT) == queue_family_indices_.end())
             {
                 queue_family_indices_[VK_QUEUE_TRANSFER_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((queue_families[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == VK_QUEUE_SPARSE_BINDING_BIT)
+            if (queue_families[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT
+                && queue_family_indices_.find(VK_QUEUE_SPARSE_BINDING_BIT) == queue_family_indices_.end())
             {
                 queue_family_indices_[VK_QUEUE_SPARSE_BINDING_BIT] = static_cast<std::uint32_t>(i);
             }
-            if ((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) == VK_QUEUE_PROTECTED_BIT)
+            if (queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT
+                && queue_family_indices_.find(VK_QUEUE_PROTECTED_BIT) == queue_family_indices_.end())
             {
                 queue_family_indices_[VK_QUEUE_PROTECTED_BIT] = static_cast<std::uint32_t>(i);
             }
