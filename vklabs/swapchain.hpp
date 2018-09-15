@@ -1,10 +1,19 @@
 #ifndef SWAPCHAIN_HPP_
 #define SWAPCHAIN_HPP_
 
-class Swapchain
+#include "image_format.hpp"
+#include <cstdint>
+
+namespace vklabs
 {
-public:
-    virtual ~Swapchain() = default;
-};
+    class Swapchain
+    {
+    public:
+        virtual ~Swapchain() = default;
+
+        virtual void Present() const = 0;
+        //virtual void ResizeBuffers(std::uint32_t width, std::uint32_t height, ImageFormat format) = 0;
+    };
+}
 
 #endif // SWAPCHAIN_HPP_

@@ -87,9 +87,15 @@ public:
 };
 
 #define VK_THROW_IF_FAILED(err_code, msg) \
-    if ((err_code) != VK_SUCCESS)      \
-    {                                  \
-        throw VkException(std::string(__FUNCTION__) + ": " + msg, err_code); \
+    if ((err_code) != VK_SUCCESS)         \
+    {                                     \
+        throw VkException(std::string(__FUNCTION__) + "(...): " + msg, err_code); \
+    }
+
+#define THROW_IF(condition, msg) \
+    if (condition)               \
+    {                            \
+        throw std::runtime_error(std::string(__FUNCTION__) + ": " + msg); \
     }
 
 #endif // VK_EXCEPTION_HPP_

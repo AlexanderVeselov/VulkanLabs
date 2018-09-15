@@ -12,6 +12,7 @@ set(SOURCES
     swapchain.hpp
     vk_swapchain.cpp
     vk_swapchain.hpp
+    image_format.hpp
 )
 
 add_library(VulkanLabs STATIC ${SOURCES})

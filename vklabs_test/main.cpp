@@ -23,9 +23,14 @@ TEST_F(VkTest, DeviceCreation)
     std::shared_ptr<vklabs::Context> context;
     ASSERT_NO_THROW(context = std::make_shared<vklabs::VkContext>(required_extensions));
 
+    const std::vector<const char*> deviceExtensions =
+    {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     // Create device
     std::shared_ptr<vklabs::Device> device;
-    ASSERT_NO_THROW(device = context->CreateDevice(0, required_extensions));
+    ASSERT_NO_THROW(device = context->CreateDevice(0, deviceExtensions));
 
 }
 

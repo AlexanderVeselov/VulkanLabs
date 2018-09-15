@@ -1,7 +1,7 @@
 #ifndef APPLICATION_HPP_
 #define APPLICATION_HPP_
 
-#include "context.hpp"
+#include "vk_context.hpp"
 #include "app_settings.hpp"
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -18,7 +18,7 @@ namespace vklabs
     private:
         AppSettings settings_;
         std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> window_;
-        std::shared_ptr<Context> context_;
+        std::shared_ptr<VkContext> context_;
 
     };
 

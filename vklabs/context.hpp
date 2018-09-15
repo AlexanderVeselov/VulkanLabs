@@ -13,7 +13,6 @@ namespace vklabs
     public:
         virtual std::shared_ptr<Device> CreateDevice(std::size_t index,
             std::vector<char const*> const& required_extensions) const = 0;
-        virtual std::shared_ptr<Swapchain> CreateSwapchain() const = 0;
         virtual ~Context() = default;
 
     };

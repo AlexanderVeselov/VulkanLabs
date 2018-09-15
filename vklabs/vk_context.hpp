@@ -5,6 +5,8 @@
 #include "app_settings.hpp"
 #include "vk_shared_object.hpp"
 #include "vk_validation.hpp"
+#include "vk_device.hpp"
+#include "swapchain.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -18,8 +20,12 @@ namespace vklabs
 
         std::shared_ptr<Device> CreateDevice(std::size_t index,
             std::vector<char const*> const& required_extensions) const override;
+    public:
 
-        std::shared_ptr<Swapchain> CreateSwapchain() const;
+        // TODO: Refactor it and move to interface
+        std::shared_ptr<Swapchain> CreateSwapchain(std::shared_ptr<Device> device,
+            VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height) const;
+        VkInstance GetInstance() const;
 
     private:
         void CreateInstance(std::vector<char const*> required_extensions);

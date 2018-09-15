@@ -3,6 +3,7 @@
 
 #include "device.hpp"
 #include "vk_shared_object.hpp"
+#include "vk_swapchain.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <unordered_map>
@@ -16,16 +17,18 @@ namespace vklabs
             std::vector<char const*> required_extensions);
 
         std::uint32_t GetGraphicsQueueFamilyIndex() const;
-
         std::uint32_t GetComputeQueueFamilyIndex() const;
+        std::uint32_t GetPresentationQueueFamilyIndex(VkSurfaceKHR surface) const;
 
-    private:
-        void FindQueueFamilyIndices();
+    public:
+        VkPhysicalDevice GetPhysicalDevice() const;
+        ::VkDevice GetLogicalDevice() const;
 
     private:
         VkPhysicalDevice physical_device_;
         VkSharedObject<::VkDevice> logical_device_;
-        std::unordered_map<VkQueueFlags, std::uint32_t> queue_family_indices_;
+        mutable std::uint32_t graphics_queue_family_index_ = 0xFFFFFFFF;
+        mutable std::uint32_t compute_queue_family_index_ = 0xFFFFFFFF;
 
     };
 

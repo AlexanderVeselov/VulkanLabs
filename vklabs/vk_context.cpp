@@ -173,9 +173,22 @@ namespace vklabs
         return std::make_shared<VkDevice>(index, physical_devices_[index], required_extensions);
     }
 
-    std::shared_ptr<Swapchain> VkContext::CreateSwapchain() const
+    std::shared_ptr<Swapchain> VkContext::CreateSwapchain(std::shared_ptr<Device> device,
+        VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height) const
     {
-        return std::make_shared<VkSwapchain>();
+        VkInstance instance = instance_.get();
+        VkSharedObject<VkSurfaceKHR> surf(surface, [instance](VkSurfaceKHR surface)
+        {
+            std::cout << "Destroying VkSurfaceKHR" << std::endl;
+            vkDestroySurfaceKHR(instance, surface, nullptr);
+        });
+
+        return std::make_shared<VkSwapchain>(device, surf, width, height);
+    }
+
+    VkInstance VkContext::GetInstance() const
+    {
+        return instance_.get();
     }
 
 }
