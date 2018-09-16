@@ -1,6 +1,7 @@
 #include "vk_exception.hpp"
 #include "vk_swapchain.hpp"
 #include <algorithm>
+#include <iostream>
 
 namespace vklabs
 {
@@ -86,6 +87,7 @@ namespace vklabs
 
         swapchain_.reset(swapchain, [logical_device](VkSwapchainKHR swapchain)
         {
+            std::cout << "Destroying VkSwapchainKHR" << std::endl;
             vkDestroySwapchainKHR(logical_device, swapchain, nullptr);
         });
 
@@ -95,9 +97,39 @@ namespace vklabs
 
         swapchain_images_.resize(image_count);
         vkGetSwapchainImagesKHR(logical_device, swapchain, &image_count, swapchain_images_.data());
+        std::cout << "Swapchain image count: " << swapchain_images_.size() << std::endl;
+        std::cout << "Swapchain image format: " << surface_format.format << std::endl;
 
-        //swapChainImageFormat = surfaceFormat.format;
-        //swapChainExtent = extent;
+        // Create swapchain image views
+        swapchain_image_views_.resize(swapchain_images_.size());
+
+        for (std::size_t i = 0; i < swapchain_images_.size(); i++)
+        {
+            VkImageViewCreateInfo create_info = {};
+            create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            create_info.image = swapchain_images_[i];
+            create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            create_info.format = surface_format.format;
+            create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            create_info.subresourceRange.baseMipLevel = 0;
+            create_info.subresourceRange.levelCount = 1;
+            create_info.subresourceRange.baseArrayLayer = 0;
+            create_info.subresourceRange.layerCount = 1;
+
+            VkImageView image_view = nullptr;
+            status = vkCreateImageView(logical_device, &create_info, nullptr, &image_view);
+            VK_THROW_IF_FAILED(status, "Failed to create image view!");
+
+            swapchain_image_views_[i].reset(image_view, [logical_device](VkImageView image_view)
+            {
+                vkDestroyImageView(logical_device, image_view, nullptr);
+            });
+
+        }
     }
 
     VkSurfaceFormatKHR VkSwapchain::FindSurfaceFormat() const

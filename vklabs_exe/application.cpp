@@ -43,11 +43,11 @@ namespace vklabs
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
-        std::shared_ptr<Device> device = context_->CreateDevice(0, device_extensions);
+        device_ = context_->CreateDevice(0, device_extensions);
         VkSurfaceKHR surface;
         VkResult status = glfwCreateWindowSurface(context_->GetInstance(), window_.get(), nullptr, &surface);
         VK_THROW_IF_FAILED(status, "Failed to create window surface!");
-        context_->CreateSwapchain(device, surface, settings.width, settings.height);
+        swapchain_ = context_->CreateSwapchain(device_, surface, settings.width, settings.height);
 
         glfwMakeContextCurrent(window_.get());
     }

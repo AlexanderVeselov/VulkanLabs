@@ -24,6 +24,7 @@ namespace vklabs
         VkSharedObject<VkSurfaceKHR> surface_;
         VkSharedObject<VkSwapchainKHR> swapchain_;
         std::vector<VkImage> swapchain_images_;
+        std::vector<VkSharedObject<VkImageView>> swapchain_image_views_;
         VkFormat swapchain_image_format_;
 
     };

@@ -19,6 +19,9 @@ namespace vklabs
         AppSettings settings_;
         std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> window_;
         std::shared_ptr<VkContext> context_;
+        std::shared_ptr<Device> device_;
+        std::shared_ptr<Swapchain> swapchain_;
+
 
     };
 
