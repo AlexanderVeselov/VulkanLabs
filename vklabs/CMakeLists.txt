@@ -13,6 +13,13 @@ set(SOURCES
     vk_swapchain.cpp
     vk_swapchain.hpp
     image_format.hpp
+    pipeline.hpp
+    vk_pipeline.hpp
+    pipeline_manager.hpp
+    vk_pipeline_manager.hpp
+    vk_pipeline_manager.cpp
+    shader.hpp
+    vk_shader.hpp
 )
 
 add_library(VulkanLabs STATIC ${SOURCES})
