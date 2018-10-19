@@ -1,5 +1,5 @@
-#ifndef VK_VALIDATION_HPP_
-#define VK_VALIDATION_HPP_
+#ifndef VULKAN_VALIDATION_HPP_
+#define VULKAN_VALIDATION_HPP_
 
 #ifdef NDEBUG
 #define VALIDATION_ENABLED 0
@@ -59,4 +59,4 @@ inline void DestroyDebugUtilsMessengerEXT(
 }
 #endif
 
-#endif // VK_VALIDATION_HPP_
+#endif // VULKAN_VALIDATION_HPP_

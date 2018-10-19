@@ -1,14 +1,17 @@
+set(VIDEOAPI_SOURCES
+    videoapi/video_api.hpp
+    videoapi/vulkan_api.hpp
+    videoapi/vulkan_api.cpp
+    videoapi/vulkan_validation.hpp
+    videoapi/vulkan_shared_object.hpp
+    videoapi/vulkan_exception.hpp
+    videoapi/vulkan_device.hpp
+    videoapi/vulkan_device.cpp
+)
+
 set(SOURCES
+    ${VIDEOAPI_SOURCES}
     app_settings.hpp
-    vk_validation.hpp
-    vk_shared_object.hpp
-    vk_exception.hpp
-    context.hpp
-    vk_context.cpp
-    vk_context.hpp
-    device.hpp
-    vk_device.cpp
-    vk_device.hpp
     swapchain.hpp
     vk_swapchain.cpp
     vk_swapchain.hpp
@@ -20,7 +23,10 @@ set(SOURCES
     vk_pipeline_manager.cpp
     shader.hpp
     vk_shader.hpp
+    vk_shader.cpp
 )
+
+source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})
 
 add_library(VulkanLabs STATIC ${SOURCES})
 target_include_directories(VulkanLabs PUBLIC .)
