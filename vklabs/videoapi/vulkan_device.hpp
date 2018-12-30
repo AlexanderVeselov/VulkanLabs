@@ -2,13 +2,16 @@
 #define VULKAN_DEVICE_HPP_
 
 #include "vulkan_shared_object.hpp"
+#include "videoapi/vulkan_api.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
+
+class VulkanSwapchain;
 
 class VulkanDevice
 {
 public:
-    VulkanDevice(VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names);
+    VulkanDevice(VulkanAPI & video_api, VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names, VulkanSharedObject<VkSurfaceKHR> surface);
 
     std::uint32_t GetGraphicsQueueFamilyIndex() const;
     std::uint32_t GetComputeQueueFamilyIndex() const;
@@ -16,15 +19,20 @@ public:
     std::uint32_t GetPresentQueueFamilyIndex() const;
 
     VkPhysicalDevice GetPhysicalDevice() const;
-    VulkanSharedObject<VkDevice> GetLogicalDevice() const;
+    VkDevice GetLogicalDevice() const;
+    VkSurfaceKHR GetSurface() const;
+
+    std::shared_ptr<VulkanSwapchain> CreateSwapchain(std::uint32_t width, std::uint32_t height);
 
 private:
+    VulkanAPI & video_api_;
+
     void FindQueueFamilyIndices();
     void CreateLogicalDevice(std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names);
 
     VkPhysicalDevice physical_device_;
     VulkanSharedObject<VkDevice> logical_device_;
-    VkSurfaceKHR surface_;
+    VulkanSharedObject<VkSurfaceKHR> surface_;
 
     std::uint32_t graphics_queue_family_index_;
     std::uint32_t compute_queue_family_index_;

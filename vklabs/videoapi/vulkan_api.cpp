@@ -34,7 +34,7 @@ static void CheckVulkanLayersSupport(std::vector<char const*> const& required_la
 
 }
 
-VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool enable_validation, std::uint32_t device_index)
+VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool enable_validation)
     : validation_enabled_(enable_validation)
 {
     // Create basic vulkan instance
@@ -46,14 +46,11 @@ VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool en
         CreateDebugMessenger();
     }
 
-    // Find physical devices
-    CreateDevice(enabled_extensions, device_index);
-
 }
 
 VulkanAPI::~VulkanAPI()
 {
-    if (validation_enabled_)
+    if (debug_messenger_)
     {
         DestroyDebugUtilsMessengerEXT(instance_.get(), debug_messenger_, nullptr);
     }
@@ -122,7 +119,7 @@ void VulkanAPI::CreateDebugMessenger()
 
 }
 
-void VulkanAPI::CreateDevice(std::vector<char const*> const& enabled_extensions, std::uint32_t physical_device_index)
+std::shared_ptr<VulkanDevice> VulkanAPI::CreateDevice(std::vector<char const*> const& enabled_extensions, std::uint32_t physical_device_index, std::function<VkSurfaceKHR(VkInstance)> surface_creation_callback)
 {
     // Get physical device count
     std::uint32_t physical_device_count = 0;
@@ -132,7 +129,15 @@ void VulkanAPI::CreateDevice(std::vector<char const*> const& enabled_extensions,
     std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
     vkEnumeratePhysicalDevices(instance_.get(), &physical_device_count, physical_devices.data());
 
-    device_ = std::make_shared<VulkanDevice>(physical_devices[physical_device_index], g_validation_layer_names, enabled_extensions);
+    VulkanSharedObject<VkSurfaceKHR> surface;
+
+    VkInstance instance = instance_.get();
+    surface.reset(surface_creation_callback(instance), [instance](VkSurfaceKHR surface)
+    {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+    });
+
+    return std::make_shared<VulkanDevice>(*this, physical_devices[physical_device_index], g_validation_layer_names, enabled_extensions, surface);
 
 }
 

@@ -1,18 +1,24 @@
 #include "vulkan_device.hpp"
 #include "vulkan_exception.hpp"
 #include "vulkan_validation.hpp"
-#include <iostream>
+#include "vulkan_swapchain.hpp"
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 namespace
 {
     const std::uint32_t kInvalidQueueFamilyIndex = ~0u;
 }
 
-VulkanDevice::VulkanDevice(VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names)
-    : physical_device_(physical_device)
-    , surface_(VK_NULL_HANDLE)
+VulkanDevice::VulkanDevice(VulkanAPI & video_api,
+                           VkPhysicalDevice physical_device,
+                           std::vector<char const*> const& enabled_layer_names,
+                           std::vector<char const*> const& enabled_extension_names,
+                           VulkanSharedObject<VkSurfaceKHR> surface)
+    : video_api_(video_api)
+    , physical_device_(physical_device)
+    , surface_(surface)
     , graphics_queue_family_index_(kInvalidQueueFamilyIndex)
     , compute_queue_family_index_(kInvalidQueueFamilyIndex)
     , transfer_queue_family_index_(kInvalidQueueFamilyIndex)
@@ -52,11 +58,11 @@ void VulkanDevice::FindQueueFamilyIndices()
             transfer_queue_family_index_ = i;
         }
 
-        if (present_queue_family_index_ == kInvalidQueueFamilyIndex && surface_ != VK_NULL_HANDLE)
+        if (surface_ && present_queue_family_index_ == kInvalidQueueFamilyIndex)
         {
             VkBool32 present_support = false;
             VkResult status = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_,
-                i, surface_, &present_support);
+                i, surface_.get(), &present_support);
             VK_THROW_IF_FAILED(status, "Failed to get surface support status!");
 
             if (present_support)
@@ -83,7 +89,7 @@ void VulkanDevice::FindQueueFamilyIndices()
         throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get transfer queue family index!");
     }
 
-    if (present_queue_family_index_ == kInvalidQueueFamilyIndex && surface_ != VK_NULL_HANDLE)
+    if (surface_ && present_queue_family_index_ == kInvalidQueueFamilyIndex)
     {
         throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get present queue family index!");
     }
@@ -146,7 +152,7 @@ void VulkanDevice::CreateLogicalDevice(std::vector<char const*> const& enabled_l
     device_create_info.enabledExtensionCount = static_cast<std::uint32_t>(enabled_extension_names.size());
     device_create_info.ppEnabledExtensionNames = enabled_extension_names.data();
 
-    ::VkDevice device = nullptr;
+    VkDevice device = nullptr;
     VkResult status = vkCreateDevice(physical_device_, &device_create_info, nullptr, &device);
     VK_THROW_IF_FAILED(status, "Failed to create VkDevice!");
 
@@ -183,7 +189,18 @@ VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
     return physical_device_;
 }
 
-VulkanSharedObject<VkDevice> VulkanDevice::GetLogicalDevice() const
+VkDevice VulkanDevice::GetLogicalDevice() const
 {
-    return logical_device_;
+    return logical_device_.get();
+}
+
+VkSurfaceKHR VulkanDevice::GetSurface() const
+{
+    return surface_.get();
+}
+
+std::shared_ptr<VulkanSwapchain> VulkanDevice::CreateSwapchain(std::uint32_t width, std::uint32_t height)
+{
+    assert(surface_);
+    return std::make_shared<VulkanSwapchain>(std::ref(*this), width, height);
 }

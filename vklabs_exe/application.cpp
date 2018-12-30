@@ -1,7 +1,4 @@
-#include "vk_context.hpp"
-#include "vk_device.hpp"
 #include "application.hpp"
-#include "vk_exception.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -12,7 +9,6 @@ namespace vklabs
     Application::Application(AppSettings const& settings)
         : settings_(settings)
         , window_(nullptr, glfwDestroyWindow)
-        , context_(nullptr)
     {
         if (!glfwInit())
         {
@@ -36,26 +32,27 @@ namespace vklabs
         char const** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
         std::vector<char const*> required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
-        context_.reset(new VkContext(required_extensions));
+        videoapi_.reset(new VulkanAPI(required_extensions, true));
 
         const std::vector<const char*> device_extensions =
         {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
-        device_ = context_->CreateDevice(0, device_extensions);
-        VkSurfaceKHR surface;
-        VkResult status = glfwCreateWindowSurface(context_->GetInstance(), window_.get(), nullptr, &surface);
-        VK_THROW_IF_FAILED(status, "Failed to create window surface!");
-
-        VkInstance instance = context_->GetInstance();
-        surface_.reset(surface, [instance](VkSurfaceKHR surface)
+        GLFWwindow* glfw_window = window_.get();
+        device_ = videoapi_->CreateDevice(device_extensions, 0, [glfw_window](VkInstance instance)
         {
-            std::cout << "Destroying VkSurfaceKHR" << std::endl;
-            vkDestroySurfaceKHR(instance, surface, nullptr);
+            VkSurfaceKHR surface;
+            VkResult status = glfwCreateWindowSurface(instance, glfw_window, nullptr, &surface);
+            if (status != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to create window surface!");
+            }
+
+            return surface;
         });
 
-        swapchain_ = std::make_shared<VkSwapchain>(device_, surface, settings.width, settings.height);
+        swapchain_ = device_->CreateSwapchain(settings.width, settings.height);
 
         glfwMakeContextCurrent(window_.get());
     }

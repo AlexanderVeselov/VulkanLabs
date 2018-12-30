@@ -7,6 +7,8 @@ set(VIDEOAPI_SOURCES
     videoapi/vulkan_exception.hpp
     videoapi/vulkan_device.hpp
     videoapi/vulkan_device.cpp
+    videoapi/vulkan_swapchain.hpp
+    videoapi/vulkan_swapchain.cpp
 )
 
 set(SOURCES

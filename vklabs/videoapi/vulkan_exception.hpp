@@ -1,6 +1,7 @@
 #ifndef VULKAN_EXCEPTION_HPP_
 #define VULKAN_EXCEPTION_HPP_
 
+#include <vulkan/vulkan.h>
 #include <stdexcept>
 
 inline char* const GetVkErrorString(VkResult error_code)
