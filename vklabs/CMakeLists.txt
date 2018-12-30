@@ -9,6 +9,10 @@ set(VIDEOAPI_SOURCES
     videoapi/vulkan_device.cpp
     videoapi/vulkan_swapchain.hpp
     videoapi/vulkan_swapchain.cpp
+    videoapi/vulkan_shader.hpp
+    videoapi/vulkan_shader.cpp
+    videoapi/vulkan_graphics_pipeline.hpp
+    videoapi/vulkan_graphics_pipeline.cpp
 )
 
 set(SOURCES

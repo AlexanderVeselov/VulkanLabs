@@ -189,7 +189,7 @@ VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const
     return physical_device_;
 }
 
-VkDevice VulkanDevice::GetLogicalDevice() const
+VkDevice VulkanDevice::GetDevice() const
 {
     return logical_device_.get();
 }

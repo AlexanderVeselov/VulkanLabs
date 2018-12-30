@@ -19,7 +19,7 @@ public:
     std::uint32_t GetPresentQueueFamilyIndex() const;
 
     VkPhysicalDevice GetPhysicalDevice() const;
-    VkDevice GetLogicalDevice() const;
+    VkDevice GetDevice() const;
     VkSurfaceKHR GetSurface() const;
 
     std::shared_ptr<VulkanSwapchain> CreateSwapchain(std::uint32_t width, std::uint32_t height);
