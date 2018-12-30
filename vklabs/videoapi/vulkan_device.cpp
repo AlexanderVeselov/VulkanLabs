@@ -3,29 +3,135 @@
 #include "vulkan_validation.hpp"
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
-VulkanDevice::VulkanDevice(VkPhysicalDevice physical_device, std::vector<char const*> const& required_extensions)
-    : physical_device_(physical_device)
+namespace
 {
-    std::array<std::uint32_t, 2> queue_family_indices =
+    const std::uint32_t kInvalidQueueFamilyIndex = ~0u;
+}
+
+VulkanDevice::VulkanDevice(VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names)
+    : physical_device_(physical_device)
+    , surface_(VK_NULL_HANDLE)
+    , graphics_queue_family_index_(kInvalidQueueFamilyIndex)
+    , compute_queue_family_index_(kInvalidQueueFamilyIndex)
+    , transfer_queue_family_index_(kInvalidQueueFamilyIndex)
+    , present_queue_family_index_(kInvalidQueueFamilyIndex)
+{
+    // Find queue family indices without retrieval present queue family index
+    FindQueueFamilyIndices();
+    CreateLogicalDevice(enabled_layer_names, enabled_extension_names);
+
+}
+
+void VulkanDevice::FindQueueFamilyIndices()
+{
+    // Get physical device queue families count
+    std::uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
+
+    // Get queue families properties
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_families.data());
+
+    // Get graphics, compute and transfer queue family indices
+    for (std::uint32_t i = 0; i < queue_families.size(); ++i)
     {
-        GetGraphicsQueueFamilyIndex(),
-        GetComputeQueueFamilyIndex()
-    };
+        if (graphics_queue_family_index_ == kInvalidQueueFamilyIndex && queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            graphics_queue_family_index_ = i;
+        }
 
-    std::uint32_t queue_family_count =
-        (queue_family_indices[0] == queue_family_indices[1]) ? 1 : 2;
+        if (compute_queue_family_index_ == kInvalidQueueFamilyIndex && queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+        {
+            compute_queue_family_index_ = i;
+        }
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos(queue_family_count);
-    for (std::uint32_t i = 0; i < queue_family_count; ++i)
+        if (transfer_queue_family_index_ == kInvalidQueueFamilyIndex && queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+        {
+            transfer_queue_family_index_ = i;
+        }
+
+        if (present_queue_family_index_ == kInvalidQueueFamilyIndex && surface_ != VK_NULL_HANDLE)
+        {
+            VkBool32 present_support = false;
+            VkResult status = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_,
+                i, surface_, &present_support);
+            VK_THROW_IF_FAILED(status, "Failed to get surface support status!");
+
+            if (present_support)
+            {
+                present_queue_family_index_ = i;
+            }
+        }
+
+    }
+
+    // Checks
+    if (graphics_queue_family_index_ == kInvalidQueueFamilyIndex)
+    {
+        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to find graphics queue family index!");
+    }
+
+    if (compute_queue_family_index_ == kInvalidQueueFamilyIndex)
+    {
+        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get compute queue family index!");
+    }
+
+    if (transfer_queue_family_index_ == kInvalidQueueFamilyIndex)
+    {
+        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get transfer queue family index!");
+    }
+
+    if (present_queue_family_index_ == kInvalidQueueFamilyIndex && surface_ != VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get present queue family index!");
+    }
+
+}
+
+void VulkanDevice::CreateLogicalDevice(std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names)
+{
+    std::vector<std::uint32_t> queue_family_indices;
+    std::vector<std::uint32_t> queue_counts;
+    queue_family_indices.push_back(graphics_queue_family_index_);
+    // CHECK: graphics queue count
+    queue_counts.push_back(1);
+
+    if (compute_queue_family_index_!= graphics_queue_family_index_)
+    {
+        queue_family_indices.push_back(compute_queue_family_index_);
+        // CHECK: compute queue count
+        queue_counts.push_back(1);
+    }
+
+    if (transfer_queue_family_index_ != graphics_queue_family_index_ && transfer_queue_family_index_ != compute_queue_family_index_)
+    {
+        queue_family_indices.push_back(transfer_queue_family_index_);
+        // CHECK: transfer queue count
+        queue_counts.push_back(1);
+    }
+
+    if (surface_)
+    {
+        if (present_queue_family_index_ != graphics_queue_family_index_ && present_queue_family_index_ != compute_queue_family_index_ && present_queue_family_index_ != transfer_queue_family_index_)
+        {
+            queue_family_indices.push_back(present_queue_family_index_);
+            // One present queue
+            queue_counts.push_back(1);
+        }
+    }
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos(queue_family_indices.size());
+    std::vector<float> queue_priorities(*std::max_element(queue_counts.begin(), queue_counts.end()), 1.0f);
+    for (std::uint32_t i = 0; i < queue_create_infos.size(); ++i)
     {
         queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_infos[i].pNext = nullptr;
         queue_create_infos[i].flags = 0;
         queue_create_infos[i].queueFamilyIndex = queue_family_indices[i];
-        queue_create_infos[i].queueCount = 1;
-        const float queue_priority = 0.0f;
-        queue_create_infos[i].pQueuePriorities = &queue_priority;
+        queue_create_infos[i].queueCount = queue_counts[i];
+        queue_create_infos[i].pQueuePriorities = queue_priorities.data();
     }
 
     VkDeviceCreateInfo device_create_info = {};
@@ -33,13 +139,12 @@ VulkanDevice::VulkanDevice(VkPhysicalDevice physical_device, std::vector<char co
 
     device_create_info.queueCreateInfoCount = static_cast<std::uint32_t>(queue_create_infos.size());
     device_create_info.pQueueCreateInfos = queue_create_infos.data();
-    device_create_info.enabledLayerCount = 0;
-#if VALIDATION_ENABLED
-    device_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
-    device_create_info.ppEnabledLayerNames = g_validation_layers.data();
-#endif
-    device_create_info.enabledExtensionCount = static_cast<std::uint32_t>(required_extensions.size());
-    device_create_info.ppEnabledExtensionNames = required_extensions.data();
+
+    device_create_info.enabledLayerCount = static_cast<std::uint32_t>(enabled_layer_names.size());
+    device_create_info.ppEnabledLayerNames = enabled_layer_names.data();
+
+    device_create_info.enabledExtensionCount = static_cast<std::uint32_t>(enabled_extension_names.size());
+    device_create_info.ppEnabledExtensionNames = enabled_extension_names.data();
 
     ::VkDevice device = nullptr;
     VkResult status = vkCreateDevice(physical_device_, &device_create_info, nullptr, &device);
@@ -55,78 +160,22 @@ VulkanDevice::VulkanDevice(VkPhysicalDevice physical_device, std::vector<char co
 
 std::uint32_t VulkanDevice::GetGraphicsQueueFamilyIndex() const
 {
-    if (graphics_queue_family_index_ == 0xFFFFFFFF)
-    {
-        std::uint32_t queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_families.data());
-
-        for (std::size_t i = 0; i < queue_families.size(); ++i)
-        {
-            if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                graphics_queue_family_index_ = static_cast<std::uint32_t>(i);
-                return graphics_queue_family_index_;
-            }
-        }
-
-        throw std::runtime_error("Graphics queue family not found!");
-    }
-
     return graphics_queue_family_index_;
 };
 
 std::uint32_t VulkanDevice::GetComputeQueueFamilyIndex() const
 {
-    if (compute_queue_family_index_ == 0xFFFFFFFF)
-    {
-        std::uint32_t queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_families.data());
-
-        for (std::size_t i = 0; i < queue_families.size(); ++i)
-        {
-            if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                compute_queue_family_index_ = static_cast<std::uint32_t>(i);
-                return compute_queue_family_index_;
-            }
-        }
-
-        throw std::runtime_error("Compute queue family not found!");
-    }
-
     return compute_queue_family_index_;
 }
 
-std::uint32_t VulkanDevice::GetPresentationQueueFamilyIndex(VkSurfaceKHR surface) const
+std::uint32_t VulkanDevice::GetTransferQueueFamilyIndex() const
 {
-    std::uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
+    return transfer_queue_family_index_;
+}
 
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_families.data());
-
-    for (std::size_t i = 0; i < queue_families.size(); ++i)
-    {
-        VkBool32 presentation_support = false;
-        VkResult status = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_,
-            static_cast<std::uint32_t>(i), surface, &presentation_support);
-        VK_THROW_IF_FAILED(status, "Failed to get surface support status!");
-
-        if (presentation_support)
-        {
-            return static_cast<std::uint32_t>(i);
-        }
-    }
-
-    throw std::runtime_error("Presentation queue family not found!");
-    return 0xFFFFFFFF;
-
+std::uint32_t VulkanDevice::GetPresentQueueFamilyIndex() const
+{
+    return present_queue_family_index_;
 }
 
 VkPhysicalDevice VulkanDevice::GetPhysicalDevice() const

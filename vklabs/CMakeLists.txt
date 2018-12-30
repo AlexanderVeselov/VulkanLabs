@@ -12,18 +12,7 @@ set(VIDEOAPI_SOURCES
 set(SOURCES
     ${VIDEOAPI_SOURCES}
     app_settings.hpp
-    swapchain.hpp
-    vk_swapchain.cpp
-    vk_swapchain.hpp
     image_format.hpp
-    pipeline.hpp
-    vk_pipeline.hpp
-    pipeline_manager.hpp
-    vk_pipeline_manager.hpp
-    vk_pipeline_manager.cpp
-    shader.hpp
-    vk_shader.hpp
-    vk_shader.cpp
 )
 
 source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})

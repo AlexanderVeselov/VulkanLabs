@@ -1,35 +1,65 @@
 #include "videoapi/vulkan_api.hpp"
 #include "videoapi/vulkan_exception.hpp"
 #include "videoapi/vulkan_device.hpp"
+#include "videoapi/vulkan_validation.hpp"
 
-VulkanAPI::VulkanAPI(std::vector<char const*> const& required_extensions, std::uint32_t device_index)
+static void CheckVulkanLayersSupport(std::vector<char const*> const& required_layer_names)
+{
+    // Get available layer count
+    std::uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+    // Retrieve available layers
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    for (auto const& layer_name : required_layer_names)
+    {
+        bool layer_found = false;
+        for (auto const& available_layer : available_layers)
+        {
+            if (strcmp(layer_name, available_layer.layerName) == 0)
+            {
+                layer_found = true;
+                break;
+            }
+        }
+
+        if (!layer_found)
+        {
+            throw std::runtime_error("CheckVulkanLayersSupport(...): "
+                "required layer '" + std::string(layer_name) + "'is not available");
+        }
+    }
+
+}
+
+VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool enable_validation, std::uint32_t device_index)
+    : validation_enabled_(enable_validation)
 {
     // Create basic vulkan instance
-    CreateInstance(required_extensions);
+    CreateInstance(enabled_extensions);
 
-#if VALIDATION_ENABLED
-    // Create debug messenger
-    CreateDebugMessenger();
-#endif
-
-    // Find available extensions
-    FindAvailableExtensions();
+    if (validation_enabled_)
+    {
+        // Create debug messenger that prints information from validation layers
+        CreateDebugMessenger();
+    }
 
     // Find physical devices
-    FindPhysicalDevices();
-
-    device_ = std::make_shared<VulkanDevice>(physical_devices_[device_index], required_extensions);
+    CreateDevice(enabled_extensions, device_index);
 
 }
 
 VulkanAPI::~VulkanAPI()
 {
-#if VALIDATION_ENABLED
-    DestroyDebugUtilsMessengerEXT(instance_.get(), debug_messenger_, nullptr);
-#endif
+    if (validation_enabled_)
+    {
+        DestroyDebugUtilsMessengerEXT(instance_.get(), debug_messenger_, nullptr);
+    }
 }
 
-void VulkanAPI::CreateInstance(std::vector<char const*> required_extensions)
+void VulkanAPI::CreateInstance(std::vector<char const*> enabled_extensions)
 {
     // Setup VkApplicationInfo
     VkApplicationInfo app_info = {};
@@ -45,16 +75,20 @@ void VulkanAPI::CreateInstance(std::vector<char const*> required_extensions)
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    create_info.enabledLayerCount = 0;
 
-#if VALIDATION_ENABLED
-    SetupValidationLayers(create_info);
-    // Add extension that required by validation layers message callback
-    required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#endif
+    if (validation_enabled_)
+    {
+        CheckVulkanLayersSupport(g_validation_layer_names);
 
-    create_info.ppEnabledExtensionNames = required_extensions.data();
-    create_info.enabledExtensionCount = static_cast<std::uint32_t>(required_extensions.size());
+        create_info.ppEnabledLayerNames = g_validation_layer_names.data();
+        create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layer_names.size());
+
+        // Add extension that required by validation layers message callback
+        enabled_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
+    create_info.ppEnabledExtensionNames = enabled_extensions.data();
+    create_info.enabledExtensionCount = static_cast<std::uint32_t>(enabled_extensions.size());
 
     VkInstance instance;
     VkResult error_code = vkCreateInstance(&create_info, nullptr, &instance);
@@ -62,12 +96,10 @@ void VulkanAPI::CreateInstance(std::vector<char const*> required_extensions)
 
     instance_.reset(instance, [](VkInstance instance)
     {
-        std::cout << "Destroying VkInstance" << std::endl;
         vkDestroyInstance(instance, nullptr);
     });
 }
 
-#if VALIDATION_ENABLED
 void VulkanAPI::CreateDebugMessenger()
 {
     // Create debug utils messenger
@@ -90,76 +122,18 @@ void VulkanAPI::CreateDebugMessenger()
 
 }
 
-void VulkanAPI::SetupValidationLayers(VkInstanceCreateInfo& instance_create_info)
-{
-    std::uint32_t layer_count;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-    std::vector<VkLayerProperties> available_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-    for (auto const& required_layer : g_validation_layers)
-    {
-        bool layer_found = false;
-        for (auto const& available_layer : available_layers)
-        {
-            if (strcmp(required_layer, available_layer.layerName) == 0)
-            {
-                layer_found = true;
-                break;
-            }
-        }
-
-        if (!layer_found)
-        {
-            throw std::runtime_error("VulkanAPI::SetupValidationLayers(...): required layer '"
-                + std::string(required_layer) + "'is not available");
-        }
-    }
-
-    instance_create_info.ppEnabledLayerNames = g_validation_layers.data();
-    instance_create_info.enabledLayerCount = static_cast<std::uint32_t>(g_validation_layers.size());
-
-}
-#endif
-
-void VulkanAPI::FindAvailableExtensions()
-{
-    // Get extension count
-    uint32_t extension_count = 0;
-    VkResult error_code = vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
-    VK_THROW_IF_FAILED(error_code, "Failed to enumerate instance extension properties!");
-
-    // Get available extensions
-    available_extensions_.resize(extension_count);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, available_extensions_.data());
-
-    // Print extensions
-    std::cout << "VulkanAPI::FindAvailableExtensions(...): Available extensions:" << std::endl;
-    for (auto const& extension : available_extensions_)
-    {
-        std::cout << " " << extension.extensionName << std::endl;
-    }
-}
-
-void VulkanAPI::FindPhysicalDevices()
+void VulkanAPI::CreateDevice(std::vector<char const*> const& enabled_extensions, std::uint32_t physical_device_index)
 {
     // Get physical device count
     std::uint32_t physical_device_count = 0;
     VkResult error_code = vkEnumeratePhysicalDevices(instance_.get(), &physical_device_count, nullptr);
     VK_THROW_IF_FAILED(error_code, "Failed to enumerate physical devices!");
 
-    // Print physical device information
-    physical_devices_.resize(physical_device_count);
-    vkEnumeratePhysicalDevices(instance_.get(), &physical_device_count, physical_devices_.data());
+    std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+    vkEnumeratePhysicalDevices(instance_.get(), &physical_device_count, physical_devices.data());
 
-    for (auto const& device : physical_devices_)
-    {
-        VkPhysicalDeviceProperties device_properties;
-        vkGetPhysicalDeviceProperties(device, &device_properties);
-        std::cout << "VkContext::VkContext(...): Found physical device:\n"
-            << device_properties.deviceName << std::endl;
+    device_ = std::make_shared<VulkanDevice>(physical_devices[physical_device_index], g_validation_layer_names, enabled_extensions);
 
-    }
 }
 
 VulkanSharedObject<VkInstance> VulkanAPI::GetInstance() const

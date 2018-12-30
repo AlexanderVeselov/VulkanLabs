@@ -21,6 +21,7 @@ namespace vklabs
         std::shared_ptr<VkContext> context_;
         std::shared_ptr<Device> device_;
         std::shared_ptr<Swapchain> swapchain_;
+        VkSharedObject<VkSurfaceKHR> surface_;
 
 
     };

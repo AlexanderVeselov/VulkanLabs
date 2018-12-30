@@ -47,7 +47,15 @@ namespace vklabs
         VkSurfaceKHR surface;
         VkResult status = glfwCreateWindowSurface(context_->GetInstance(), window_.get(), nullptr, &surface);
         VK_THROW_IF_FAILED(status, "Failed to create window surface!");
-        swapchain_ = context_->CreateSwapchain(device_, surface, settings.width, settings.height);
+
+        VkInstance instance = context_->GetInstance();
+        surface_.reset(surface, [instance](VkSurfaceKHR surface)
+        {
+            std::cout << "Destroying VkSurfaceKHR" << std::endl;
+            vkDestroySurfaceKHR(instance, surface, nullptr);
+        });
+
+        swapchain_ = std::make_shared<VkSwapchain>(device_, surface, settings.width, settings.height);
 
         glfwMakeContextCurrent(window_.get());
     }

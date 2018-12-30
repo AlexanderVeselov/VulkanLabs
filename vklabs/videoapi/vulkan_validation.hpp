@@ -1,24 +1,14 @@
 #ifndef VULKAN_VALIDATION_HPP_
 #define VULKAN_VALIDATION_HPP_
 
-#ifdef NDEBUG
-#define VALIDATION_ENABLED 0
-#else
-#define VALIDATION_ENABLED 1
-#endif
-
-#include <array>
+#include <vector>
 #include <iostream>
 #include <vulkan/vulkan.h>
 
-constexpr std::array<char const*, 1> g_validation_layers =
+static const std::vector<char const*> g_validation_layer_names =
 {
-#if VALIDATION_ENABLED
     "VK_LAYER_LUNARG_standard_validation"
-#endif
 };
-
-#if VALIDATION_ENABLED
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -39,10 +29,12 @@ inline VkResult CreateDebugUtilsMessengerEXT(
     VkDebugUtilsMessengerEXT* pCallback)
 {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
+    if (func != nullptr)
+    {
         return func(instance, pCreateInfo, pAllocator, pCallback);
     }
-    else {
+    else
+    {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
@@ -53,10 +45,10 @@ inline void DestroyDebugUtilsMessengerEXT(
     const VkAllocationCallbacks* pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
+    if (func != nullptr)
+    {
         func(instance, callback, pAllocator);
     }
 }
-#endif
 
 #endif // VULKAN_VALIDATION_HPP_
