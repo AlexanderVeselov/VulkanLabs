@@ -9,6 +9,7 @@
 class VulkanSwapchain;
 class VulkanShader;
 class VulkanGraphicsPipeline;
+class VulkanCommandBuffer;
 
 class VulkanDevice
 {
@@ -27,6 +28,7 @@ public:
     std::shared_ptr<VulkanSwapchain> CreateSwapchain(std::uint32_t width, std::uint32_t height);
     std::shared_ptr<VulkanShader> CreateShader(std::string const& filename);
     std::shared_ptr<VulkanGraphicsPipeline> CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader);
+    std::shared_ptr<VulkanCommandBuffer> CreateGraphicsCommandBuffer();
 
 private:
     VulkanAPI & video_api_;

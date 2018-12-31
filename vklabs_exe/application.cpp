@@ -57,6 +57,8 @@ namespace vklabs
         std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shader.frag.spv");
 
         device_->CreateGraphicsPipeline(vertex_shader, pixel_shader);
+        device_->CreateGraphicsCommandBuffer();
+
 
         glfwMakeContextCurrent(window_.get());
     }
