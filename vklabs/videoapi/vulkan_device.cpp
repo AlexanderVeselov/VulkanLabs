@@ -26,9 +26,9 @@ VulkanDevice::VulkanDevice(VulkanAPI & video_api,
     , transfer_queue_family_index_(kInvalidQueueFamilyIndex)
     , present_queue_family_index_(kInvalidQueueFamilyIndex)
 {
-    // Find queue family indices without retrieval present queue family index
     FindQueueFamilyIndices();
     CreateLogicalDevice(enabled_layer_names, enabled_extension_names);
+    CreateCommandPools();
 
 }
 
@@ -166,6 +166,43 @@ void VulkanDevice::CreateLogicalDevice(std::vector<char const*> const& enabled_l
 
 }
 
+void VulkanDevice::CreateCommandPools()
+{
+    VkCommandPoolCreateInfo cmd_pool_create_info = {};
+    cmd_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+
+    VkCommandPool command_pool;
+    VkDevice device = GetDevice();
+    VkResult status;
+    // Graphics command pool
+    cmd_pool_create_info.queueFamilyIndex = GetGraphicsQueueFamilyIndex();
+    status = vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &command_pool);
+    VK_THROW_IF_FAILED(status, "Failed to create graphics command pool!");
+    graphics_command_pool_.reset(command_pool, [device](VkCommandPool command_pool)
+    {
+        vkDestroyCommandPool(device, command_pool, nullptr);
+    });
+
+    // Compute command pool
+    cmd_pool_create_info.queueFamilyIndex = GetComputeQueueFamilyIndex();
+    status = vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &command_pool);
+    VK_THROW_IF_FAILED(status, "Failed to create compute command pool!");
+    compute_command_pool_.reset(command_pool, [device](VkCommandPool command_pool)
+    {
+        vkDestroyCommandPool(device, command_pool, nullptr);
+    });
+
+    // Transfer command pool
+    cmd_pool_create_info.queueFamilyIndex = GetTransferQueueFamilyIndex();
+    status = vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &command_pool);
+    VK_THROW_IF_FAILED(status, "Failed to create transfer command pool!");
+    transfer_command_pool_.reset(command_pool, [device](VkCommandPool command_pool)
+    {
+        vkDestroyCommandPool(device, command_pool, nullptr);
+    });
+
+}
+
 std::uint32_t VulkanDevice::GetGraphicsQueueFamilyIndex() const
 {
     return graphics_queue_family_index_;
@@ -204,7 +241,7 @@ VkSurfaceKHR VulkanDevice::GetSurface() const
 std::shared_ptr<VulkanSwapchain> VulkanDevice::CreateSwapchain(std::uint32_t width, std::uint32_t height)
 {
     assert(surface_);
-    return std::make_shared<VulkanSwapchain>(std::ref(*this), width, height);
+    return std::make_shared<VulkanSwapchain>(*this, width, height);
 }
 
 std::shared_ptr<VulkanShader> VulkanDevice::CreateShader(std::string const& filename)

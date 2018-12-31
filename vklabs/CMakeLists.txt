@@ -13,6 +13,8 @@ set(VIDEOAPI_SOURCES
     videoapi/vulkan_shader.cpp
     videoapi/vulkan_graphics_pipeline.hpp
     videoapi/vulkan_graphics_pipeline.cpp
+    videoapi/vulkan_command_buffer.hpp
+    videoapi/vulkan_command_buffer.cpp
 )
 
 set(SOURCES

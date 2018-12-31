@@ -33,6 +33,7 @@ private:
 
     void FindQueueFamilyIndices();
     void CreateLogicalDevice(std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names);
+    void CreateCommandPools();
 
     VkPhysicalDevice physical_device_;
     VulkanSharedObject<VkDevice> logical_device_;
@@ -42,6 +43,10 @@ private:
     std::uint32_t compute_queue_family_index_;
     std::uint32_t transfer_queue_family_index_;
     std::uint32_t present_queue_family_index_;
+
+    VulkanSharedObject<VkCommandPool> graphics_command_pool_;
+    VulkanSharedObject<VkCommandPool> compute_command_pool_;
+    VulkanSharedObject<VkCommandPool> transfer_command_pool_;
 
 };
 
