@@ -2,6 +2,8 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_validation.hpp"
 #include "vulkan_swapchain.hpp"
+#include "vulkan_shader.hpp"
+#include "vulkan_graphics_pipeline.hpp"
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -203,4 +205,14 @@ std::shared_ptr<VulkanSwapchain> VulkanDevice::CreateSwapchain(std::uint32_t wid
 {
     assert(surface_);
     return std::make_shared<VulkanSwapchain>(std::ref(*this), width, height);
+}
+
+std::shared_ptr<VulkanShader> VulkanDevice::CreateShader(std::string const& filename)
+{
+    return std::make_shared<VulkanShader>(*this, filename);
+}
+
+std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader)
+{
+    return std::make_shared<VulkanGraphicsPipeline>(*this, vertex_shader, pixel_shader);
 }

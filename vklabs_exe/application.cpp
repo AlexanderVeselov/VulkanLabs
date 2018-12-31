@@ -53,6 +53,10 @@ namespace vklabs
         });
 
         swapchain_ = device_->CreateSwapchain(settings.width, settings.height);
+        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateShader("../vklabs/shader.vert.spv");
+        std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shader.frag.spv");
+
+        device_->CreateGraphicsPipeline(vertex_shader, pixel_shader);
 
         glfwMakeContextCurrent(window_.get());
     }

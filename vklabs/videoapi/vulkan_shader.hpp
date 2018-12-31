@@ -2,6 +2,7 @@
 #define VULKAN_SHADER_HPP_
 
 #include "vulkan_device.hpp"
+#include "vulkan_shared_object.hpp"
 #include <string>
 #include <vulkan/vulkan.h>
 
@@ -13,7 +14,7 @@ public:
 
 private:
     VulkanDevice & device_;
-    VkShaderModule shader_module_;
+    VulkanSharedObject<VkShaderModule> shader_module_;
 
 };
 

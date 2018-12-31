@@ -139,7 +139,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice & device, std::uint32_t width, std
     swapchain_create_info.oldSwapchain = nullptr;
 
     VkSwapchainKHR swapchain = nullptr;
-    VkDevice logical_device = device_.GetLogicalDevice();
+    VkDevice logical_device = device_.GetDevice();
     status = vkCreateSwapchainKHR(logical_device, &swapchain_create_info, nullptr, &swapchain);
     VK_THROW_IF_FAILED(status, "Failed to create swap chain!");
 

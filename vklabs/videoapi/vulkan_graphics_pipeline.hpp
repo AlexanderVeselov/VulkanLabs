@@ -1,6 +1,7 @@
 #ifndef VULKAN_GRAPHICS_PIPELINE_HPP_
 #define VULKAN_GRAPHICS_PIPELINE_HPP_
 
+#include "vulkan_shared_object.hpp"
 #include "vulkan_shader.hpp"
 #include "vulkan_device.hpp"
 #include <vulkan/vulkan.h>
@@ -16,6 +17,10 @@ private:
 
     std::shared_ptr<VulkanShader> vertex_shader_;
     std::shared_ptr<VulkanShader> pixel_shader_;
+
+    VulkanSharedObject<VkPipelineLayout> pipeline_layout_;
+    VulkanSharedObject<VkRenderPass> render_pass_;
+    VulkanSharedObject<VkPipeline> pipeline_;
 
 };
 

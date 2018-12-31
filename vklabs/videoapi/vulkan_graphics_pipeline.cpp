@@ -10,13 +10,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     vs_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vs_stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vs_stage.module = vertex_shader_->GetShaderModule();
-    vs_stage.pName = "vs_main";
+    vs_stage.pName = "main";
 
     VkPipelineShaderStageCreateInfo ps_stage = {};
     ps_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     ps_stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     ps_stage.module = pixel_shader_->GetShaderModule();
-    ps_stage.pName = "ps_main";
+    ps_stage.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] =
     {
@@ -65,9 +65,15 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_layout_create_info.setLayoutCount = 0;
     pipeline_layout_create_info.pushConstantRangeCount = 0;
 
+    VkDevice logical_device = device_.GetDevice();
     VkPipelineLayout pipeline_layout;
-    VkResult status = vkCreatePipelineLayout(device_.GetDevice(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
+    VkResult status = vkCreatePipelineLayout(logical_device, &pipeline_layout_create_info, nullptr, &pipeline_layout);
     VK_THROW_IF_FAILED(status, "Failed to create pipeline layout!");
+
+    pipeline_layout_.reset(pipeline_layout, [logical_device](VkPipelineLayout pipeline_layout)
+    {
+        vkDestroyPipelineLayout(logical_device, pipeline_layout, nullptr);
+    });
 
     // Create render pass
     VkAttachmentDescription colorAttachment = {};
@@ -108,8 +114,20 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     render_pass_create_info.pDependencies = &subpass_dependency;
 
     VkRenderPass render_pass;
-    status = vkCreateRenderPass(device_.GetDevice(), &render_pass_create_info, nullptr, &render_pass);
+    status = vkCreateRenderPass(logical_device, &render_pass_create_info, nullptr, &render_pass);
     VK_THROW_IF_FAILED(status, "Failed to create render pass!");
+
+    render_pass_.reset(render_pass, [logical_device](VkRenderPass render_pass)
+    {
+        vkDestroyRenderPass(logical_device, render_pass, nullptr);
+    });
+
+    VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+    VkPipelineDynamicStateCreateInfo dynamic_state = {};
+    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.dynamicStateCount = 2;
+    dynamic_state.pDynamicStates = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -121,12 +139,18 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_create_info.pRasterizationState = &rasterization_state;
     pipeline_create_info.pMultisampleState = &multisample_state;
     pipeline_create_info.pColorBlendState = &color_blend_state;
+    pipeline_create_info.pDynamicState = &dynamic_state;
     pipeline_create_info.layout = pipeline_layout;
     pipeline_create_info.renderPass = render_pass;
     pipeline_create_info.subpass = 0;
 
     VkPipeline pipeline;
-    status = vkCreateGraphicsPipelines(device_.GetDevice(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &pipeline);
+    status = vkCreateGraphicsPipelines(logical_device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &pipeline);
     VK_THROW_IF_FAILED(status, "Failed to create graphics pipeline!");
+
+    pipeline_.reset(pipeline, [logical_device](VkPipeline pipeline)
+    {
+        vkDestroyPipeline(logical_device, pipeline, nullptr);
+    });
 
 }

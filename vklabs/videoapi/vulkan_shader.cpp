@@ -36,11 +36,17 @@ VulkanShader::VulkanShader(VulkanDevice & device, std::string const& filename)
 {
     std::vector<char> shader_code;
     ReadShaderCodeFromFile(filename, shader_code);
-    shader_module_ = CreateShaderModule(device_.GetDevice(), shader_code);
+    VkDevice logical_device = device_.GetDevice();
+
+    VkShaderModule shader_module = CreateShaderModule(logical_device, shader_code);
+    shader_module_.reset(shader_module, [logical_device](VkShaderModule shader_module)
+    {
+        vkDestroyShaderModule(logical_device, shader_module, nullptr);
+    });
 
 }
 
 VkShaderModule VulkanShader::GetShaderModule() const
 {
-    return shader_module_;
+    return shader_module_.get();
 }
