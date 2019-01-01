@@ -3,20 +3,6 @@
 #include <vector>
 #include <fstream>
 
-static VkShaderModule CreateShaderModule(VkDevice device, std::vector<char> const& code)
-{
-    VkShaderModuleCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = (std::uint32_t const*)code.data();
-
-    VkShaderModule shaderModule;
-    VkResult status = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
-    VK_THROW_IF_FAILED(status, "Failed to create shader module!");
-
-    return shaderModule;
-}
-
 static void ReadShaderCodeFromFile(std::string const& filename, std::vector<char> & code)
 {
     std::ifstream input_file(filename, std::ios::in | std::ios::ate | std::ios::binary);
@@ -38,15 +24,17 @@ VulkanShader::VulkanShader(VulkanDevice & device, std::string const& filename)
     ReadShaderCodeFromFile(filename, shader_code);
     VkDevice logical_device = device_.GetDevice();
 
-    VkShaderModule shader_module = CreateShaderModule(logical_device, shader_code);
-    shader_module_.reset(shader_module, [logical_device](VkShaderModule shader_module)
-    {
-        vkDestroyShaderModule(logical_device, shader_module, nullptr);
-    });
+    VkShaderModuleCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    create_info.codeSize = shader_code.size();
+    create_info.pCode = (std::uint32_t const*)shader_code.data();
+
+    VkResult status = shader_module_.Create(logical_device, create_info);
+    VK_THROW_IF_FAILED(status, "Failed to create shader module!");
 
 }
 
 VkShaderModule VulkanShader::GetShaderModule() const
 {
-    return shader_module_.get();
+    return shader_module_;
 }

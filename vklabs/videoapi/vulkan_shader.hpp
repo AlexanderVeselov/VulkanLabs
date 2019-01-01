@@ -14,7 +14,7 @@ public:
 
 private:
     VulkanDevice & device_;
-    VulkanSharedObject<VkShaderModule> shader_module_;
+    VulkanScopedObject<VkShaderModule, vkCreateShaderModule, vkDestroyShaderModule> shader_module_;
 
 };
 

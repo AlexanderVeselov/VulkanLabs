@@ -81,14 +81,9 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_layout_create_info.pushConstantRangeCount = 0;
 
     VkDevice logical_device = device_.GetDevice();
-    VkPipelineLayout pipeline_layout;
-    VkResult status = vkCreatePipelineLayout(logical_device, &pipeline_layout_create_info, nullptr, &pipeline_layout);
-    VK_THROW_IF_FAILED(status, "Failed to create pipeline layout!");
 
-    pipeline_layout_.reset(pipeline_layout, [logical_device](VkPipelineLayout pipeline_layout)
-    {
-        vkDestroyPipelineLayout(logical_device, pipeline_layout, nullptr);
-    });
+    VkResult status = pipeline_layout_.Create(logical_device, pipeline_layout_create_info);
+    VK_THROW_IF_FAILED(status, "Failed to create pipeline layout!");
 
     // Create render pass
     VkAttachmentDescription colorAttachment = {};
@@ -128,14 +123,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     render_pass_create_info.dependencyCount = 1;
     render_pass_create_info.pDependencies = &subpass_dependency;
 
-    VkRenderPass render_pass;
-    status = vkCreateRenderPass(logical_device, &render_pass_create_info, nullptr, &render_pass);
+    status = render_pass_.Create(logical_device, render_pass_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create render pass!");
-
-    render_pass_.reset(render_pass, [logical_device](VkRenderPass render_pass)
-    {
-        vkDestroyRenderPass(logical_device, render_pass, nullptr);
-    });
 
     VkGraphicsPipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -147,34 +136,23 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_create_info.pRasterizationState = &rasterization_state;
     pipeline_create_info.pMultisampleState = &multisample_state;
     pipeline_create_info.pColorBlendState = &color_blend_state;
-    pipeline_create_info.layout = pipeline_layout;
-    pipeline_create_info.renderPass = render_pass;
+    pipeline_create_info.layout = pipeline_layout_;
+    pipeline_create_info.renderPass = render_pass_;
     pipeline_create_info.subpass = 0;
 
-    VkPipeline pipeline;
-    status = vkCreateGraphicsPipelines(logical_device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &pipeline);
+    status = pipeline_.Reset(logical_device, pipeline_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create graphics pipeline!");
-
-    pipeline_.reset(pipeline, [logical_device](VkPipeline pipeline)
-    {
-        vkDestroyPipeline(logical_device, pipeline, nullptr);
-    });
 
     VkFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebuffer_create_info.renderPass = render_pass;
+    framebuffer_create_info.renderPass = render_pass_;
     framebuffer_create_info.attachmentCount = 1;
     framebuffer_create_info.pAttachments = &attachment;
     framebuffer_create_info.width = extent_.width;
     framebuffer_create_info.height = extent_.height;
     framebuffer_create_info.layers = 1;
 
-    VkFramebuffer framebuffer;
-    status = vkCreateFramebuffer(logical_device, &framebuffer_create_info, nullptr, &framebuffer);
+    status = framebuffer_.Create(logical_device, framebuffer_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create framebuffer!");
-    framebuffer_.reset(framebuffer, [logical_device](VkFramebuffer framebuffer)
-    {
-        vkDestroyFramebuffer(logical_device, framebuffer, nullptr);
-    });
 
 }

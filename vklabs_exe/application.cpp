@@ -87,6 +87,9 @@ namespace vklabs
             device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
             swapchain_->Present();
         }
+
+        device_->GraphicsWaitIdle();
+
     }
 
     Application::~Application()

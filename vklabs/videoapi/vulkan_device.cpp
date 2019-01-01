@@ -279,3 +279,13 @@ void VulkanDevice::SubmitGraphicsCommandBuffer(std::shared_ptr<VulkanCommandBuff
     VK_THROW_IF_FAILED(status, "Failed to submit command buffer!");
 
 }
+
+void VulkanDevice::GraphicsWaitIdle()
+{
+    VkQueue graphics_queue;
+    vkGetDeviceQueue(GetDevice(), GetGraphicsQueueFamilyIndex(), 0, &graphics_queue);
+
+    VkResult status = vkQueueWaitIdle(graphics_queue);
+    VK_THROW_IF_FAILED(status, "Failed to wait idle!");
+
+}
