@@ -17,12 +17,15 @@ set(VIDEOAPI_SOURCES
     videoapi/vulkan_command_buffer.cpp
     videoapi/vulkan_image.hpp
     videoapi/vulkan_image.cpp
+    videoapi/vulkan_buffer.hpp
+    videoapi/vulkan_buffer.cpp
+    videoapi/vulkan_memory_manager.hpp
+    videoapi/vulkan_memory_manager.cpp
 )
 
 set(SOURCES
     ${VIDEOAPI_SOURCES}
     app_settings.hpp
-    image_format.hpp
 )
 
 source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})

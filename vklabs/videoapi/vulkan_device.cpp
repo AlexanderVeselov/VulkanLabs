@@ -5,7 +5,9 @@
 #include "vulkan_shader.hpp"
 #include "vulkan_graphics_pipeline.hpp"
 #include "vulkan_command_buffer.hpp"
+#include "vulkan_buffer.hpp"
 #include "vulkan_image.hpp"
+#include "vulkan_memory_manager.hpp"
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -21,6 +23,7 @@ VulkanDevice::VulkanDevice(VulkanAPI & video_api,
                            std::vector<char const*> const& enabled_extension_names,
                            VulkanSharedObject<VkSurfaceKHR> surface)
     : video_api_(video_api)
+    , memory_manager_(*this)
     , physical_device_(physical_device)
     , surface_(surface)
     , graphics_queue_family_index_(kInvalidQueueFamilyIndex)
@@ -31,7 +34,6 @@ VulkanDevice::VulkanDevice(VulkanAPI & video_api,
     FindQueueFamilyIndices();
     CreateLogicalDevice(enabled_layer_names, enabled_extension_names);
     CreateCommandPools();
-
 }
 
 void VulkanDevice::FindQueueFamilyIndices()
@@ -259,6 +261,11 @@ std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std
 std::shared_ptr<VulkanCommandBuffer> VulkanDevice::CreateGraphicsCommandBuffer()
 {
     return std::make_shared<VulkanCommandBuffer>(*this, graphics_command_pool_.get());
+}
+
+std::shared_ptr<VulkanBuffer> VulkanDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
+{
+    return std::make_shared<VulkanBuffer>(*this, size, usage);
 }
 
 std::shared_ptr<VulkanImage> VulkanDevice::CreateImage(VkImage image, VkFormat format)

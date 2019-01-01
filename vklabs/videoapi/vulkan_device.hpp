@@ -2,15 +2,18 @@
 #define VULKAN_DEVICE_HPP_
 
 #include "vulkan_shared_object.hpp"
-#include "videoapi/vulkan_api.hpp"
+#include "vulkan_memory_manager.hpp"
 #include <vulkan/vulkan.h>
 #include <vector>
 
+class VulkanAPI;
 class VulkanSwapchain;
 class VulkanShader;
 class VulkanGraphicsPipeline;
 class VulkanCommandBuffer;
+class VulkanBuffer;
 class VulkanImage;
+class VulkanMemoryManager;
 
 class VulkanDevice
 {
@@ -30,12 +33,18 @@ public:
     std::shared_ptr<VulkanShader> CreateShader(std::string const& filename);
     std::shared_ptr<VulkanGraphicsPipeline> CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment);
     std::shared_ptr<VulkanCommandBuffer> CreateGraphicsCommandBuffer();
+    std::shared_ptr<VulkanBuffer> CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage);
     std::shared_ptr<VulkanImage> CreateImage(VkImage image, VkFormat format);
+    
     void SubmitGraphicsCommandBuffer(std::shared_ptr<VulkanCommandBuffer> command_buffer);
     void GraphicsWaitIdle();
 
+
+    VulkanMemoryManager & GetMemoryManager() { return memory_manager_; }
+
 private:
     VulkanAPI & video_api_;
+    VulkanMemoryManager memory_manager_;
 
     void FindQueueFamilyIndices();
     void CreateLogicalDevice(std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names);
