@@ -61,6 +61,22 @@ namespace vklabs
         pipelines_.resize(swapchain_images_count);
         cmd_buffers_.resize(swapchain_images_count);
 
+        struct Vertex
+        {
+            float pos[3];
+            float color[3];
+        };
+
+        const std::vector<Vertex> vertices =
+        {
+            {{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+        };
+
+        vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        vertex_buffer_->Write(vertices.data());
+
         for (std::size_t i = 0; i < swapchain_images_count; ++i)
         {
             pipelines_[i] = device_->CreateGraphicsPipeline(vertex_shader, pixel_shader, settings.width, settings.height, swapchain_->GetImage(i));
@@ -68,7 +84,8 @@ namespace vklabs
             cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
             cmd_buffers_[i]->Begin();
             cmd_buffers_[i]->BeginGraphics(pipelines_[i]);
-            cmd_buffers_[i]->Draw(3);
+            cmd_buffers_[i]->BindVertexBuffer(vertex_buffer_);
+            cmd_buffers_[i]->Draw(vertices.size());
             cmd_buffers_[i]->EndGraphics();
             cmd_buffers_[i]->End();
         }

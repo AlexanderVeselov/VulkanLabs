@@ -25,7 +25,7 @@ VulkanBuffer::VulkanBuffer(VulkanDevice & device, VkDeviceSize size, VkBufferUsa
 
 }
 
-void VulkanBuffer::Write(void* data)
+void VulkanBuffer::Write(void const* data)
 {
     void* mapped_data;
     vkMapMemory(device_.GetDevice(), memory_, 0, buffer_size_, 0, &mapped_data);

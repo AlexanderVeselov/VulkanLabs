@@ -8,7 +8,8 @@ class VulkanBuffer
 {
 public:
     VulkanBuffer(VulkanDevice & device, VkDeviceSize size, VkBufferUsageFlags usage);
-    void Write(void* data);
+    void Write(void const* data);
+    VkBuffer GetBuffer() const { return buffer_; }
 
 private:
     VulkanDevice & device_;

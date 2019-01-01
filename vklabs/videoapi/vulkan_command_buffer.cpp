@@ -1,6 +1,7 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_graphics_pipeline.hpp"
+#include "vulkan_buffer.hpp"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice & device, VkCommandPool command_pool)
     : device_(device)
@@ -64,4 +65,11 @@ void VulkanCommandBuffer::EndGraphics()
 {
     THROW_IF(!current_pipeline_, "Graphics is not started!");
     vkCmdEndRenderPass(command_buffer_);
+}
+
+void VulkanCommandBuffer::BindVertexBuffer(std::shared_ptr<VulkanBuffer> buffer)
+{
+    VkBuffer vertex_buffers[] = { buffer->GetBuffer() };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(command_buffer_, 0, 1, vertex_buffers, offsets);
 }

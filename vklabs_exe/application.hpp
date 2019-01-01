@@ -5,6 +5,7 @@
 #include "videoapi/vulkan_api.hpp"
 #include "videoapi/vulkan_device.hpp"
 #include "videoapi/vulkan_swapchain.hpp"
+#include "videoapi/vulkan_buffer.hpp"
 #include <GLFW/glfw3.h>
 #include <memory>
 
@@ -25,6 +26,7 @@ namespace vklabs
         std::shared_ptr<VulkanSwapchain> swapchain_;
         std::vector<std::shared_ptr<VulkanGraphicsPipeline>> pipelines_;
         std::vector<std::shared_ptr<VulkanCommandBuffer>> cmd_buffers_;
+        std::shared_ptr<VulkanBuffer> vertex_buffer_;
 
 
     };

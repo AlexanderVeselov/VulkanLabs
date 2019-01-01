@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 class VulkanGraphicsPipeline;
+class VulkanBuffer;
 
 class VulkanCommandBuffer
 {
@@ -15,6 +16,7 @@ public:
     void EndGraphics();
     void Draw(std::uint32_t vertex_count, std::uint32_t first_vertex = 0, std::uint32_t instance_count = 1, std::uint32_t first_instance = 0);
     void End();
+    void BindVertexBuffer(std::shared_ptr<VulkanBuffer> buffer);
     VkCommandBuffer GetCommandBuffer() const { return command_buffer_; }
     
 private:
