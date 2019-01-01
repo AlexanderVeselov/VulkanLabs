@@ -5,6 +5,7 @@
 #include "vulkan_shader.hpp"
 #include "vulkan_graphics_pipeline.hpp"
 #include "vulkan_command_buffer.hpp"
+#include "vulkan_image.hpp"
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -250,7 +251,7 @@ std::shared_ptr<VulkanShader> VulkanDevice::CreateShader(std::string const& file
     return std::make_shared<VulkanShader>(*this, filename);
 }
 
-std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment)
+std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment)
 {
     return std::make_shared<VulkanGraphicsPipeline>(*this, vertex_shader, pixel_shader, width, height, attachment);
 }
@@ -258,6 +259,11 @@ std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std
 std::shared_ptr<VulkanCommandBuffer> VulkanDevice::CreateGraphicsCommandBuffer()
 {
     return std::make_shared<VulkanCommandBuffer>(*this, graphics_command_pool_.get());
+}
+
+std::shared_ptr<VulkanImage> VulkanDevice::CreateImage(VkImage image, VkFormat format)
+{
+    return std::make_shared<VulkanImage>(*this, image, format);
 }
 
 void VulkanDevice::SubmitGraphicsCommandBuffer(std::shared_ptr<VulkanCommandBuffer> command_buffer)

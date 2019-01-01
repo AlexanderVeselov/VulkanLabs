@@ -7,10 +7,12 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+class VulkanImage;
+
 class VulkanGraphicsPipeline
 {
 public:
-    VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment);
+    VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment);
     VkRenderPass GetRenderPass() const { return render_pass_; }
     VkPipeline GetPipeline() const { return pipeline_; }
     VkFramebuffer GetFramebuffer() const { return framebuffer_; }

@@ -1,6 +1,7 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_swapchain.hpp"
 #include "vulkan_device.hpp"
+#include "vulkan_image.hpp"
 #include <algorithm>
 
 static VkSurfaceFormatKHR FindSurfaceFormat(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
@@ -147,31 +148,13 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice & device, std::uint32_t width, std
     VK_THROW_IF_FAILED(status, "Failed to get swap chain images!");
     THROW_IF(image_count == 0, "No swap chain images!");
 
-    swapchain_images_.resize(image_count);
-    vkGetSwapchainImagesKHR(logical_device, swapchain_, &image_count, swapchain_images_.data());
+    std::vector<VkImage> swapchain_images(image_count);
+    vkGetSwapchainImagesKHR(logical_device, swapchain_, &image_count, swapchain_images.data());
 
-    // Create swapchain image views
-    swapchain_image_views_.resize(swapchain_images_.size());
-
-    for (std::size_t i = 0; i < swapchain_images_.size(); i++)
+    for (std::size_t i = 0; i < swapchain_images.size(); i++)
     {
-        VkImageViewCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        create_info.image = swapchain_images_[i];
-        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        create_info.format = surface_format.format;
-        create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        create_info.subresourceRange.baseMipLevel = 0;
-        create_info.subresourceRange.levelCount = 1;
-        create_info.subresourceRange.baseArrayLayer = 0;
-        create_info.subresourceRange.layerCount = 1;
-
-        status = swapchain_image_views_[i].Create(logical_device, create_info);
-        VK_THROW_IF_FAILED(status, "Failed to create image view!");
+        std::shared_ptr<VulkanImage> image = device_.CreateImage(swapchain_images[i], surface_format.format);
+        swapchain_images_.push_back(image);
     }
 
     status = vkAcquireNextImageKHR(logical_device, swapchain_, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, VK_NULL_HANDLE, &current_image_index_);

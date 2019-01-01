@@ -1,7 +1,8 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_graphics_pipeline.hpp"
+#include "vulkan_image.hpp"
 
-VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment)
+VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment)
     : device_(device)
     , vertex_shader_(vertex_shader)
     , pixel_shader_(pixel_shader)
@@ -147,7 +148,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_create_info.renderPass = render_pass_;
     framebuffer_create_info.attachmentCount = 1;
-    framebuffer_create_info.pAttachments = &attachment;
+    VkImageView image_view = attachment->GetImageView();
+    framebuffer_create_info.pAttachments = &image_view;
     framebuffer_create_info.width = extent_.width;
     framebuffer_create_info.height = extent_.height;
     framebuffer_create_info.layers = 1;

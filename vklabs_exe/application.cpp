@@ -54,16 +54,16 @@ namespace vklabs
         });
 
         swapchain_ = device_->CreateSwapchain(settings.width, settings.height);
-        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateShader("../vklabs/shader.vert.spv");
-        std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shader.frag.spv");
+        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateShader("../vklabs/shaders/shader.vert.spv");
+        std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shaders/shader.frag.spv");
 
-        std::uint32_t swapchain_images_count = swapchain_->GetImagesCount();
+        std::size_t swapchain_images_count = swapchain_->GetImagesCount();
         pipelines_.resize(swapchain_images_count);
         cmd_buffers_.resize(swapchain_images_count);
 
-        for (std::uint32_t i = 0; i < swapchain_images_count; ++i)
+        for (std::size_t i = 0; i < swapchain_images_count; ++i)
         {
-            pipelines_[i] = device_->CreateGraphicsPipeline(vertex_shader, pixel_shader, settings.width, settings.height, swapchain_->GetImageView(i));
+            pipelines_[i] = device_->CreateGraphicsPipeline(vertex_shader, pixel_shader, settings.width, settings.height, swapchain_->GetImage(i));
 
             cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
             cmd_buffers_[i]->Begin();
