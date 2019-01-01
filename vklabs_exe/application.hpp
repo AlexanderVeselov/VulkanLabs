@@ -23,6 +23,8 @@ namespace vklabs
         std::shared_ptr<VulkanAPI> videoapi_;
         std::shared_ptr<VulkanDevice> device_;
         std::shared_ptr<VulkanSwapchain> swapchain_;
+        std::vector<std::shared_ptr<VulkanGraphicsPipeline>> pipelines_;
+        std::vector<std::shared_ptr<VulkanCommandBuffer>> cmd_buffers_;
 
 
     };

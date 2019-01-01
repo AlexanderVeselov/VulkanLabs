@@ -1,5 +1,6 @@
-#include "vulkan_command_buffer.hpp"
 #include "vulkan_exception.hpp"
+#include "vulkan_command_buffer.hpp"
+#include "vulkan_graphics_pipeline.hpp"
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice & device, VkCommandPool command_pool)
     : device_(device)
@@ -15,4 +16,52 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice & device, VkCommandPool co
     VkResult status = vkAllocateCommandBuffers(logical_device, &allocate_info, &command_buffer_);
     VK_THROW_IF_FAILED(status, "Failed to allocate command buffer!");
 
+}
+
+void VulkanCommandBuffer::Begin()
+{
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    VkResult status = vkBeginCommandBuffer(command_buffer_, &begin_info);
+    VK_THROW_IF_FAILED(status, "Failed to begin command buffer!");
+}
+
+void VulkanCommandBuffer::Draw(std::uint32_t vertex_count, std::uint32_t first_vertex, std::uint32_t instance_count, std::uint32_t first_instance)
+{
+    vkCmdDraw(command_buffer_, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void VulkanCommandBuffer::End()
+{
+    VkResult status = vkEndCommandBuffer(command_buffer_);
+    VK_THROW_IF_FAILED(status, "Failed to end command buffer!");
+}
+
+void VulkanCommandBuffer::BeginGraphics(std::shared_ptr<VulkanGraphicsPipeline> pipeline)
+{
+    THROW_IF(current_pipeline_, "Graphics is already started!");
+
+    current_pipeline_ = pipeline;
+
+    VkRenderPassBeginInfo render_pass_begin_info = {};
+    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_begin_info.renderPass = current_pipeline_->GetRenderPass();
+    render_pass_begin_info.framebuffer = current_pipeline_->GetFramebuffer();
+    render_pass_begin_info.renderArea.offset = { 0, 0 };
+    render_pass_begin_info.renderArea.extent = pipeline->GetExtent();
+
+    VkClearValue clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    render_pass_begin_info.clearValueCount = 1;
+    render_pass_begin_info.pClearValues = &clear_color;
+
+    vkCmdBeginRenderPass(command_buffer_, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+}
+
+void VulkanCommandBuffer::EndGraphics()
+{
+    THROW_IF(!current_pipeline_, "Graphics is not started!");
+    vkCmdEndRenderPass(command_buffer_);
 }

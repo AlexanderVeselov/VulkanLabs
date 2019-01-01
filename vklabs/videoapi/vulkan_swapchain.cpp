@@ -1,5 +1,6 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_swapchain.hpp"
+#include "vulkan_device.hpp"
 #include <algorithm>
 
 static VkSurfaceFormatKHR FindSurfaceFormat(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
@@ -155,39 +156,59 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice & device, std::uint32_t width, std
     swapchain_images_.resize(image_count);
     vkGetSwapchainImagesKHR(logical_device, swapchain, &image_count, swapchain_images_.data());
 
-    //// Create swapchain image views
-    //swapchain_image_views_.resize(swapchain_images_.size());
+    // Create swapchain image views
+    swapchain_image_views_.resize(swapchain_images_.size());
 
-    //for (std::size_t i = 0; i < swapchain_images_.size(); i++)
-    //{
-    //    VkImageViewCreateInfo create_info = {};
-    //    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    //    create_info.image = swapchain_images_[i];
-    //    create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    //    create_info.format = surface_format.format;
-    //    create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    //    create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    //    create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    //    create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    //    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    //    create_info.subresourceRange.baseMipLevel = 0;
-    //    create_info.subresourceRange.levelCount = 1;
-    //    create_info.subresourceRange.baseArrayLayer = 0;
-    //    create_info.subresourceRange.layerCount = 1;
+    for (std::size_t i = 0; i < swapchain_images_.size(); i++)
+    {
+        VkImageViewCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        create_info.image = swapchain_images_[i];
+        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        create_info.format = surface_format.format;
+        create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        create_info.subresourceRange.baseMipLevel = 0;
+        create_info.subresourceRange.levelCount = 1;
+        create_info.subresourceRange.baseArrayLayer = 0;
+        create_info.subresourceRange.layerCount = 1;
 
-    //    VkImageView image_view = nullptr;
-    //    status = vkCreateImageView(logical_device, &create_info, nullptr, &image_view);
-    //    VK_THROW_IF_FAILED(status, "Failed to create image view!");
+        VkImageView image_view;
+        status = vkCreateImageView(logical_device, &create_info, nullptr, &image_view);
+        VK_THROW_IF_FAILED(status, "Failed to create image view!");
 
-    //    swapchain_image_views_[i].reset(image_view, [logical_device](VkImageView image_view)
-    //    {
-    //        vkDestroyImageView(logical_device, image_view, nullptr);
-    //    });
+        swapchain_image_views_[i].reset(image_view, [logical_device](VkImageView image_view)
+        {
+            vkDestroyImageView(logical_device, image_view, nullptr);
+        });
 
-    //}
+
+    }
+
+    status = vkAcquireNextImageKHR(logical_device, swapchain_.get(), std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, VK_NULL_HANDLE, &current_image_index_);
+    VK_THROW_IF_FAILED(status, "Failed to acquire next image!");
+
+    vkGetDeviceQueue(logical_device, device_.GetPresentQueueFamilyIndex(), 0, &present_queue_);
 }
 
-//void VulkanSwapchain::Present() const
-//{
-//
-//}
+void VulkanSwapchain::Present()
+{
+    VkPresentInfoKHR present_info = {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.swapchainCount = 1;
+
+    VkSwapchainKHR swapchain = swapchain_.get();
+    present_info.pSwapchains = &swapchain;
+
+    present_info.pImageIndices = &current_image_index_;
+
+    VkResult status = vkQueuePresentKHR(present_queue_, &present_info);
+    VK_THROW_IF_FAILED(status, "Failed to present image!");
+
+    status = vkAcquireNextImageKHR(device_.GetDevice(), swapchain_.get(), std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, VK_NULL_HANDLE, &current_image_index_);
+    VK_THROW_IF_FAILED(status, "Failed to acquire next image!");
+
+}

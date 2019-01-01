@@ -250,12 +250,32 @@ std::shared_ptr<VulkanShader> VulkanDevice::CreateShader(std::string const& file
     return std::make_shared<VulkanShader>(*this, filename);
 }
 
-std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader)
+std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment)
 {
-    return std::make_shared<VulkanGraphicsPipeline>(*this, vertex_shader, pixel_shader);
+    return std::make_shared<VulkanGraphicsPipeline>(*this, vertex_shader, pixel_shader, width, height, attachment);
 }
 
 std::shared_ptr<VulkanCommandBuffer> VulkanDevice::CreateGraphicsCommandBuffer()
 {
     return std::make_shared<VulkanCommandBuffer>(*this, graphics_command_pool_.get());
+}
+
+void VulkanDevice::SubmitGraphicsCommandBuffer(std::shared_ptr<VulkanCommandBuffer> command_buffer)
+{
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    VkCommandBuffer cmd_buffer = command_buffer->GetCommandBuffer();
+    submitInfo.pCommandBuffers = &cmd_buffer;
+
+    VkQueue graphics_queue;
+    vkGetDeviceQueue(GetDevice(), GetGraphicsQueueFamilyIndex(), 0, &graphics_queue);
+
+    VkResult status = vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    VK_THROW_IF_FAILED(status, "Failed to submit command buffer!");
+
 }

@@ -1,10 +1,11 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_graphics_pipeline.hpp"
 
-VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader)
+VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment)
     : device_(device)
     , vertex_shader_(vertex_shader)
     , pixel_shader_(pixel_shader)
+    , extent_({width, height})
 {
     VkPipelineShaderStageCreateInfo vs_stage = {};
     vs_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -33,10 +34,24 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)extent_.width;
+    viewport.height = (float)extent_.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = extent_;
+
     VkPipelineViewportStateCreateInfo viewport_state = {};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state.viewportCount = 1;
+    viewport_state.pViewports = &viewport;
     viewport_state.scissorCount = 1;
+    viewport_state.pScissors = &scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterization_state = {};
     rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -122,13 +137,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
         vkDestroyRenderPass(logical_device, render_pass, nullptr);
     });
 
-    VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-
-    VkPipelineDynamicStateCreateInfo dynamic_state = {};
-    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = 2;
-    dynamic_state.pDynamicStates = dynamic_states;
-
     VkGraphicsPipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_create_info.stageCount = 2;
@@ -139,7 +147,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_create_info.pRasterizationState = &rasterization_state;
     pipeline_create_info.pMultisampleState = &multisample_state;
     pipeline_create_info.pColorBlendState = &color_blend_state;
-    pipeline_create_info.pDynamicState = &dynamic_state;
     pipeline_create_info.layout = pipeline_layout;
     pipeline_create_info.renderPass = render_pass;
     pipeline_create_info.subpass = 0;
@@ -151,6 +158,23 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     pipeline_.reset(pipeline, [logical_device](VkPipeline pipeline)
     {
         vkDestroyPipeline(logical_device, pipeline, nullptr);
+    });
+
+    VkFramebufferCreateInfo framebuffer_create_info = {};
+    framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebuffer_create_info.renderPass = render_pass;
+    framebuffer_create_info.attachmentCount = 1;
+    framebuffer_create_info.pAttachments = &attachment;
+    framebuffer_create_info.width = extent_.width;
+    framebuffer_create_info.height = extent_.height;
+    framebuffer_create_info.layers = 1;
+
+    VkFramebuffer framebuffer;
+    status = vkCreateFramebuffer(logical_device, &framebuffer_create_info, nullptr, &framebuffer);
+    VK_THROW_IF_FAILED(status, "Failed to create framebuffer!");
+    framebuffer_.reset(framebuffer, [logical_device](VkFramebuffer framebuffer)
+    {
+        vkDestroyFramebuffer(logical_device, framebuffer, nullptr);
     });
 
 }

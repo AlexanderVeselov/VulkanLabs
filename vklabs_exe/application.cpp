@@ -1,4 +1,5 @@
 #include "application.hpp"
+#include "videoapi/vulkan_command_buffer.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -56,9 +57,21 @@ namespace vklabs
         std::shared_ptr<VulkanShader> vertex_shader = device_->CreateShader("../vklabs/shader.vert.spv");
         std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shader.frag.spv");
 
-        device_->CreateGraphicsPipeline(vertex_shader, pixel_shader);
-        device_->CreateGraphicsCommandBuffer();
+        std::uint32_t swapchain_images_count = swapchain_->GetImagesCount();
+        pipelines_.resize(swapchain_images_count);
+        cmd_buffers_.resize(swapchain_images_count);
 
+        for (std::uint32_t i = 0; i < swapchain_images_count; ++i)
+        {
+            pipelines_[i] = device_->CreateGraphicsPipeline(vertex_shader, pixel_shader, settings.width, settings.height, swapchain_->GetImageView(i));
+
+            cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
+            cmd_buffers_[i]->Begin();
+            cmd_buffers_[i]->BeginGraphics(pipelines_[i]);
+            cmd_buffers_[i]->Draw(3);
+            cmd_buffers_[i]->EndGraphics();
+            cmd_buffers_[i]->End();
+        }
 
         glfwMakeContextCurrent(window_.get());
     }
@@ -70,6 +83,9 @@ namespace vklabs
             // Main loop
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
+
+            device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
+            swapchain_->Present();
         }
     }
 

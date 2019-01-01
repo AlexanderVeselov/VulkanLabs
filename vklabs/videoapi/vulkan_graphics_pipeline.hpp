@@ -10,7 +10,11 @@
 class VulkanGraphicsPipeline
 {
 public:
-    VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader);
+    VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, VkImageView attachment);
+    VkRenderPass GetRenderPass() const { return render_pass_.get(); }
+    VkPipeline GetPipeline() const { return pipeline_.get(); }
+    VkFramebuffer GetFramebuffer() const { return framebuffer_.get(); }
+    VkExtent2D GetExtent() const { return extent_; }
 
 private:
     VulkanDevice & device_;
@@ -21,6 +25,8 @@ private:
     VulkanSharedObject<VkPipelineLayout> pipeline_layout_;
     VulkanSharedObject<VkRenderPass> render_pass_;
     VulkanSharedObject<VkPipeline> pipeline_;
+    VulkanSharedObject<VkFramebuffer> framebuffer_;
+    VkExtent2D extent_;
 
 };
 
