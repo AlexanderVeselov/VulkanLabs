@@ -34,6 +34,7 @@ VulkanDevice::VulkanDevice(VulkanAPI & video_api,
     FindQueueFamilyIndices();
     CreateLogicalDevice(enabled_layer_names, enabled_extension_names);
     CreateCommandPools();
+    CreateDescriptorPool();
 }
 
 void VulkanDevice::FindQueueFamilyIndices()
@@ -80,25 +81,10 @@ void VulkanDevice::FindQueueFamilyIndices()
     }
 
     // Checks
-    if (graphics_queue_family_index_ == kInvalidQueueFamilyIndex)
-    {
-        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to find graphics queue family index!");
-    }
-
-    if (compute_queue_family_index_ == kInvalidQueueFamilyIndex)
-    {
-        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get compute queue family index!");
-    }
-
-    if (transfer_queue_family_index_ == kInvalidQueueFamilyIndex)
-    {
-        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get transfer queue family index!");
-    }
-
-    if (surface_ && present_queue_family_index_ == kInvalidQueueFamilyIndex)
-    {
-        throw std::runtime_error("VulkanDevice::FindQueueFamilyIndices(): Failed to get present queue family index!");
-    }
+    THROW_IF(graphics_queue_family_index_ == kInvalidQueueFamilyIndex, "Failed to get graphics queue family index!");
+    THROW_IF(compute_queue_family_index_ == kInvalidQueueFamilyIndex, "Failed to get compute queue family index!");
+    THROW_IF(transfer_queue_family_index_ == kInvalidQueueFamilyIndex, "Failed to get transfer queue family index!");
+    THROW_IF(surface_ && present_queue_family_index_ == kInvalidQueueFamilyIndex, "Failed to get present queue family index!");
 
 }
 
@@ -162,7 +148,7 @@ void VulkanDevice::CreateLogicalDevice(std::vector<char const*> const& enabled_l
     VkResult status = vkCreateDevice(physical_device_, &device_create_info, nullptr, &device);
     VK_THROW_IF_FAILED(status, "Failed to create VkDevice!");
 
-    logical_device_.reset(device, [](::VkDevice device)
+    logical_device_.reset(device, [](VkDevice device)
     {
         std::cout << "Destroying logical device" << std::endl;
         vkDestroyDevice(device, nullptr);
@@ -204,6 +190,27 @@ void VulkanDevice::CreateCommandPools()
     {
         vkDestroyCommandPool(device, command_pool, nullptr);
     });
+
+}
+
+void VulkanDevice::CreateDescriptorPool()
+{
+    const std::uint32_t kMaxDescriptorCount = 128;
+    const std::uint32_t kMaxDescriptorSets = 128;
+
+    VkDescriptorPoolSize descriptor_pool_sizes[] =
+    {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, kMaxDescriptorCount}
+    };
+
+    VkDescriptorPoolCreateInfo descriptor_pool_create_info = {};
+    descriptor_pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptor_pool_create_info.poolSizeCount = sizeof(descriptor_pool_sizes) / sizeof(descriptor_pool_sizes[0]);
+    descriptor_pool_create_info.pPoolSizes = descriptor_pool_sizes;
+    descriptor_pool_create_info.maxSets = kMaxDescriptorSets;
+
+    VkResult status = descriptor_pool_.Create(GetDevice(), descriptor_pool_create_info);
+    VK_THROW_IF_FAILED(status, "Failed to create descriptor pool!");
 
 }
 

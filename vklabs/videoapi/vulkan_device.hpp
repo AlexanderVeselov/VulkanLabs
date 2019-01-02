@@ -49,6 +49,7 @@ private:
     void FindQueueFamilyIndices();
     void CreateLogicalDevice(std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names);
     void CreateCommandPools();
+    void CreateDescriptorPool();
 
     VkPhysicalDevice physical_device_;
     VulkanSharedObject<VkDevice> logical_device_;
@@ -62,6 +63,8 @@ private:
     VulkanSharedObject<VkCommandPool> graphics_command_pool_;
     VulkanSharedObject<VkCommandPool> compute_command_pool_;
     VulkanSharedObject<VkCommandPool> transfer_command_pool_;
+
+    VulkanScopedObject<VkDescriptorPool, vkCreateDescriptorPool, vkDestroyDescriptorPool> descriptor_pool_;
 
 };
 
