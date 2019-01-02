@@ -13,3 +13,17 @@ add_subdirectory(dependencies/googletest)
 add_subdirectory(vklabs)
 add_subdirectory(vklabs_exe)
 add_subdirectory(vklabs_test)
+add_subdirectory(dependencies/SPIRV-Cross)
+
+set(SPIRV_CROSS_PROJECTS
+    spirv-cross
+    spirv-cross-core
+    spirv-cross-cpp
+    spirv-cross-glsl
+    spirv-cross-hlsl
+    spirv-cross-msl
+    spirv-cross-reflect
+    spirv-cross-util
+)
+
+set_property(TARGET ${SPIRV_CROSS_PROJECTS} PROPERTY FOLDER "SPIRV-Cross")
