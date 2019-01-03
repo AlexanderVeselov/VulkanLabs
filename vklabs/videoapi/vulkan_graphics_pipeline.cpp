@@ -26,28 +26,16 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
         ps_stage
     };
 
-    VkVertexInputBindingDescription vertex_input_binding_desc = {};
-    vertex_input_binding_desc.binding = 0;
-    vertex_input_binding_desc.stride = 24;
-    vertex_input_binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    VkVertexInputAttributeDescription vertex_input_attribute_desc[2];
-    vertex_input_attribute_desc[0].location = 0;
-    vertex_input_attribute_desc[0].binding = 0;
-    vertex_input_attribute_desc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertex_input_attribute_desc[0].offset = 0;
-
-    vertex_input_attribute_desc[1].location = 1;
-    vertex_input_attribute_desc[1].binding = 0;
-    vertex_input_attribute_desc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertex_input_attribute_desc[1].offset = 12;
-
     VkPipelineVertexInputStateCreateInfo vertex_input_state = {};
     vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.vertexBindingDescriptionCount = 1;
-    vertex_input_state.pVertexBindingDescriptions = &vertex_input_binding_desc;
-    vertex_input_state.vertexAttributeDescriptionCount = 2;
-    vertex_input_state.pVertexAttributeDescriptions = vertex_input_attribute_desc;
+
+    auto const& vertex_binding_descriptions = vertex_shader_->GetVertexInputBindingDescriptions();
+    vertex_input_state.vertexBindingDescriptionCount = static_cast<std::uint32_t>(vertex_binding_descriptions.size());
+    vertex_input_state.pVertexBindingDescriptions = vertex_binding_descriptions.data();
+
+    auto const& vertex_attribute_descriptions = vertex_shader_->GetVertexInputAttributeDescriptions();
+    vertex_input_state.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(vertex_attribute_descriptions.size());
+    vertex_input_state.pVertexAttributeDescriptions = vertex_attribute_descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_state = {};
     input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -54,8 +54,8 @@ namespace vklabs
         });
 
         swapchain_ = device_->CreateSwapchain(settings.width, settings.height);
-        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateShader("../vklabs/shaders/shader.vert.spv");
-        std::shared_ptr<VulkanShader> pixel_shader = device_->CreateShader("../vklabs/shaders/shader.frag.spv");
+        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateVertexShader("../vklabs/shaders/shader.vert.spv");
+        std::shared_ptr<VulkanShader> pixel_shader = device_->CreatePixelShader("../vklabs/shaders/shader.frag.spv");
 
         std::size_t swapchain_images_count = swapchain_->GetImagesCount();
         pipelines_.resize(swapchain_images_count);

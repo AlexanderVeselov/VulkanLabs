@@ -32,5 +32,5 @@ source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})
 
 add_library(VulkanLabs STATIC ${SOURCES})
 target_include_directories(VulkanLabs PUBLIC .)
-target_link_libraries(VulkanLabs Vulkan::Vulkan)
+target_link_libraries(VulkanLabs Vulkan::Vulkan spirv-cross-core)
 target_compile_features(VulkanLabs PUBLIC cxx_std_17)

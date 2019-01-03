@@ -9,12 +9,23 @@
 class VulkanShader
 {
 public:
-    VulkanShader(VulkanDevice & device, std::string const& filename);
+    enum ShaderType
+    {
+        kVertex,
+        kPixel
+    };
+
+    VulkanShader(VulkanDevice & device, ShaderType shader_type, std::string const& filename);
     VkShaderModule GetShaderModule() const;
+    std::vector<VkVertexInputAttributeDescription> const& GetVertexInputAttributeDescriptions() const { return vertex_input_attribute_descs_; }
+    std::vector<VkVertexInputBindingDescription> const& GetVertexInputBindingDescriptions() const { return vertex_input_binding_desc_; }
 
 private:
     VulkanDevice & device_;
+    ShaderType shader_type_;
     VulkanScopedObject<VkShaderModule, vkCreateShaderModule, vkDestroyShaderModule> shader_module_;
+    std::vector<VkVertexInputAttributeDescription> vertex_input_attribute_descs_;
+    std::vector<VkVertexInputBindingDescription> vertex_input_binding_desc_;
 
 };
 

@@ -255,9 +255,14 @@ std::shared_ptr<VulkanSwapchain> VulkanDevice::CreateSwapchain(std::uint32_t wid
     return std::make_shared<VulkanSwapchain>(*this, width, height);
 }
 
-std::shared_ptr<VulkanShader> VulkanDevice::CreateShader(std::string const& filename)
+std::shared_ptr<VulkanShader> VulkanDevice::CreateVertexShader(std::string const& filename)
 {
-    return std::make_shared<VulkanShader>(*this, filename);
+    return std::make_shared<VulkanShader>(*this, VulkanShader::kVertex, filename);
+}
+
+std::shared_ptr<VulkanShader> VulkanDevice::CreatePixelShader(std::string const& filename)
+{
+    return std::make_shared<VulkanShader>(*this, VulkanShader::kPixel, filename);
 }
 
 std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment)
