@@ -6,6 +6,7 @@
 #include "videoapi/vulkan_device.hpp"
 #include "videoapi/vulkan_swapchain.hpp"
 #include "videoapi/vulkan_buffer.hpp"
+#include "videoapi/vulkan_graphics_pipeline.hpp"
 #include <GLFW/glfw3.h>
 #include <memory>
 

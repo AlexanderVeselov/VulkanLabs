@@ -265,9 +265,9 @@ std::shared_ptr<VulkanShader> VulkanDevice::CreatePixelShader(std::string const&
     return std::make_shared<VulkanShader>(*this, VulkanShader::kPixel, filename);
 }
 
-std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment)
+std::shared_ptr<VulkanGraphicsPipeline> VulkanDevice::CreateGraphicsPipeline(VulkanGraphicsPipelineState const& pipeline_state)
 {
-    return std::make_shared<VulkanGraphicsPipeline>(*this, vertex_shader, pixel_shader, width, height, attachment);
+    return std::make_shared<VulkanGraphicsPipeline>(*this, pipeline_state);
 }
 
 std::shared_ptr<VulkanCommandBuffer> VulkanDevice::CreateGraphicsCommandBuffer()

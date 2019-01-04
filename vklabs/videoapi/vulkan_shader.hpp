@@ -6,6 +6,12 @@
 #include <string>
 #include <vulkan/vulkan.h>
 
+namespace spirv_cross
+{
+    class Compiler;
+    struct ShaderResources;
+}
+
 class VulkanShader
 {
 public:
@@ -21,6 +27,9 @@ public:
     std::vector<VkVertexInputBindingDescription> const& GetVertexInputBindingDescriptions() const { return vertex_input_binding_desc_; }
 
 private:
+    void FillVertexInputDescriptions(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources);
+    void FillBindings(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources);
+
     VulkanDevice & device_;
     ShaderType shader_type_;
     VulkanScopedObject<VkShaderModule, vkCreateShaderModule, vkDestroyShaderModule> shader_module_;

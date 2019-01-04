@@ -79,7 +79,12 @@ namespace vklabs
 
         for (std::size_t i = 0; i < swapchain_images_count; ++i)
         {
-            pipelines_[i] = device_->CreateGraphicsPipeline(vertex_shader, pixel_shader, settings.width, settings.height, swapchain_->GetImage(i));
+            VulkanGraphicsPipelineState pipeline_state(settings.width, settings.height);
+            pipeline_state.SetVertexShader(vertex_shader);
+            pipeline_state.SetPixelShader(pixel_shader);
+            pipeline_state.SetColorAttachment(0, swapchain_->GetImage(i));
+
+            pipelines_[i] = device_->CreateGraphicsPipeline(pipeline_state);
 
             cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
             cmd_buffers_[i]->Begin();

@@ -5,6 +5,11 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
+layout(binding = 0) uniform UBO
+{
+    vec3 data;
+} ubo;
+
 layout(location = 0) out vec3 fragColor;
 
 layout(location = 0) in vec3 inPosition;

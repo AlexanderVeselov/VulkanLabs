@@ -2,6 +2,7 @@
 #include "vulkan_exception.hpp"
 #include "spirv_cross.hpp"
 #include <vector>
+#include <map>
 #include <fstream>
 
 static VkFormat SPIRTypeToVkFormat(spirv_cross::SPIRType const& spv_type)
@@ -145,6 +146,17 @@ static VkFormat SPIRTypeToVkFormat(spirv_cross::SPIRType const& spv_type)
     }
 }
 
+static VkShaderStageFlags ShaderTypeToVkShaderStageFlags(VulkanShader::ShaderType shader_type)
+{
+    switch (shader_type)
+    {
+    case VulkanShader::kVertex:
+        return VK_SHADER_STAGE_VERTEX_BIT;
+    case VulkanShader::kPixel:
+        return VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+}
+
 static void ReadShaderCodeFromFile(std::string const& filename, std::vector<std::uint32_t> & code)
 {
     std::ifstream input_file(filename, std::ios::in | std::ios::ate | std::ios::binary);
@@ -178,29 +190,97 @@ VulkanShader::VulkanShader(VulkanDevice & device, ShaderType shader_type, std::s
     VK_THROW_IF_FAILED(status, "Failed to create shader module!");
 
     spirv_cross::Compiler compiler(std::move(shader_code));
-    spirv_cross::ShaderResources res = compiler.get_shader_resources();
+    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
     if (shader_type_ == kVertex)
     {
-        vertex_input_attribute_descs_.resize(res.stage_inputs.size());
-        std::uint32_t current_offset = 0;
-        for (std::size_t i = 0; i < res.stage_inputs.size(); ++i)
-        {
-            spirv_cross::Resource const& resource = res.stage_inputs[i];
-            vertex_input_attribute_descs_[i].binding = 0;
-            vertex_input_attribute_descs_[i].location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-            spirv_cross::SPIRType const& resource_type = compiler.get_type(resource.type_id);
-            vertex_input_attribute_descs_[i].format = SPIRTypeToVkFormat(resource_type);
-            vertex_input_attribute_descs_[i].offset = current_offset;
-            current_offset += resource_type.width / 8 * resource_type.vecsize;
-        }
-
-        VkVertexInputBindingDescription vertex_binding_desc = {};
-        vertex_binding_desc.binding = 0;
-        vertex_binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        vertex_binding_desc.stride = current_offset;
-        vertex_input_binding_desc_.push_back(vertex_binding_desc);
+        FillVertexInputDescriptions(compiler, resources);
     }
+
+    FillBindings(compiler, resources);
+}
+
+void VulkanShader::FillVertexInputDescriptions(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources)
+{
+    vertex_input_attribute_descs_.resize(resources.stage_inputs.size());
+    std::uint32_t current_offset = 0;
+    for (std::size_t i = 0; i < resources.stage_inputs.size(); ++i)
+    {
+        spirv_cross::Resource const& resource = resources.stage_inputs[i];
+        vertex_input_attribute_descs_[i].binding = 0;
+        vertex_input_attribute_descs_[i].location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        spirv_cross::SPIRType const& resource_type = compiler.get_type(resource.type_id);
+        vertex_input_attribute_descs_[i].format = SPIRTypeToVkFormat(resource_type);
+        vertex_input_attribute_descs_[i].offset = current_offset;
+        current_offset += resource_type.width / 8 * resource_type.vecsize;
+    }
+
+    VkVertexInputBindingDescription vertex_binding_desc = {};
+    vertex_binding_desc.binding = 0;
+    vertex_binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vertex_binding_desc.stride = current_offset;
+    vertex_input_binding_desc_.push_back(vertex_binding_desc);
+}
+
+void VulkanShader::FillBindings(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources)
+{
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+
+    VkDescriptorSetLayoutBinding binding;
+    // TODO: array support?
+    binding.descriptorCount = 1;
+    binding.stageFlags = ShaderTypeToVkShaderStageFlags(shader_type_);
+    binding.pImmutableSamplers = nullptr;
+
+    for (spirv_cross::Resource const& resource : resources.uniform_buffers)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        bindings.push_back(binding);
+    }
+
+    for (spirv_cross::Resource const& resource : resources.storage_buffers)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings.push_back(binding);
+    }
+
+    for (spirv_cross::Resource const& resource : resources.storage_images)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        bindings.push_back(binding);
+    }
+
+    for (spirv_cross::Resource const& resource : resources.sampled_images)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindings.push_back(binding);
+    }
+
+    for (spirv_cross::Resource const& resource : resources.separate_images)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings.push_back(binding);
+    }
+
+    for (spirv_cross::Resource const& resource : resources.separate_samplers)
+    {
+        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        bindings.push_back(binding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo desc_set_layout_create_info = {};
+    desc_set_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    desc_set_layout_create_info.bindingCount = static_cast<std::uint32_t>(bindings.size());
+    desc_set_layout_create_info.pBindings = bindings.data();
+    //vkDestroyDescriptorSetLayout
+    //vkCreateDescriptorSetLayout(device_.GetDevice(), )
+
 }
 
 VkShaderModule VulkanShader::GetShaderModule() const

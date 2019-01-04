@@ -2,22 +2,21 @@
 #include "vulkan_graphics_pipeline.hpp"
 #include "vulkan_image.hpp"
 
-VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::shared_ptr<VulkanShader> vertex_shader, std::shared_ptr<VulkanShader> pixel_shader, std::uint32_t width, std::uint32_t height, std::shared_ptr<VulkanImage> attachment)
+VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGraphicsPipelineState const& pipeline_state)
     : device_(device)
-    , vertex_shader_(vertex_shader)
-    , pixel_shader_(pixel_shader)
-    , extent_({width, height})
+    , pipeline_state_(pipeline_state)
+    , extent_({pipeline_state.width_, pipeline_state.height_})
 {
     VkPipelineShaderStageCreateInfo vs_stage = {};
     vs_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vs_stage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vs_stage.module = vertex_shader_->GetShaderModule();
+    vs_stage.module = pipeline_state.vertex_shader_->GetShaderModule();
     vs_stage.pName = "main";
 
     VkPipelineShaderStageCreateInfo ps_stage = {};
     ps_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     ps_stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    ps_stage.module = pixel_shader_->GetShaderModule();
+    ps_stage.module = pipeline_state.pixel_shader_->GetShaderModule();
     ps_stage.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] =
@@ -29,11 +28,11 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     VkPipelineVertexInputStateCreateInfo vertex_input_state = {};
     vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto const& vertex_binding_descriptions = vertex_shader_->GetVertexInputBindingDescriptions();
+    auto const& vertex_binding_descriptions = pipeline_state.vertex_shader_->GetVertexInputBindingDescriptions();
     vertex_input_state.vertexBindingDescriptionCount = static_cast<std::uint32_t>(vertex_binding_descriptions.size());
     vertex_input_state.pVertexBindingDescriptions = vertex_binding_descriptions.data();
 
-    auto const& vertex_attribute_descriptions = vertex_shader_->GetVertexInputAttributeDescriptions();
+    auto const& vertex_attribute_descriptions = pipeline_state.vertex_shader_->GetVertexInputAttributeDescriptions();
     vertex_input_state.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(vertex_attribute_descriptions.size());
     vertex_input_state.pVertexAttributeDescriptions = vertex_attribute_descriptions.data();
 
@@ -151,12 +150,20 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, std::share
     status = pipeline_.Reset(logical_device, pipeline_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create graphics pipeline!");
 
+    std::vector<VkImageView> attachments;
+    for (std::uint32_t i = 0; i < pipeline_state_.color_attachments_.size(); ++i)
+    {
+        if (pipeline_state_.color_attachments_[i])
+        {
+            attachments.push_back(pipeline_state_.color_attachments_[i]->GetImageView());
+        }
+    }
+
     VkFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_create_info.renderPass = render_pass_;
-    framebuffer_create_info.attachmentCount = 1;
-    VkImageView image_view = attachment->GetImageView();
-    framebuffer_create_info.pAttachments = &image_view;
+    framebuffer_create_info.attachmentCount = static_cast<std::uint32_t>(attachments.size());
+    framebuffer_create_info.pAttachments = attachments.data();
     framebuffer_create_info.width = extent_.width;
     framebuffer_create_info.height = extent_.height;
     framebuffer_create_info.layers = 1;
