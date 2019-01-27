@@ -247,7 +247,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
@@ -265,7 +265,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
@@ -283,7 +283,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
@@ -301,7 +301,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
@@ -319,7 +319,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
@@ -337,7 +337,7 @@ void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, s
         vk_binding.binding = binding_idx;
         vk_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 
-        DescriptorSet::Binding binding;
+        DescriptorSet::Binding binding = {};
         binding.vk_binding = vk_binding;
         descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }

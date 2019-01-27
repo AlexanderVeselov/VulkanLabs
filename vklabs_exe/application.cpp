@@ -77,9 +77,13 @@ namespace vklabs
         vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         vertex_buffer_->Write(vertices.data());
 
-        float data[3] = { 1.0f, 0.0f, 0.0f };
-        uniform_buffer_ = device_->CreateBuffer(sizeof(data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        uniform_buffer_->Write(&data);
+        float vs_data[3] = { 1.0f, 0.0f, 0.0f };
+        vs_uniform_buffer_ = device_->CreateBuffer(sizeof(vs_data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        vs_uniform_buffer_->Write(&vs_data);
+
+        float ps_data[3] = { 0.0f, 1.0f, 0.0f };
+        ps_uniform_buffer_ = device_->CreateBuffer(sizeof(ps_data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        ps_uniform_buffer_->Write(&ps_data);
 
         for (std::size_t i = 0; i < swapchain_images_count; ++i)
         {
@@ -89,7 +93,8 @@ namespace vklabs
             pipeline_state.SetColorAttachment(0, swapchain_->GetImage(i));
 
             pipelines_[i] = device_->CreateGraphicsPipeline(pipeline_state);
-            pipelines_[i]->SetArg(0, 0, uniform_buffer_);
+            pipelines_[i]->SetArg(0, 0, vs_uniform_buffer_);
+            pipelines_[i]->SetArg(0, 1, ps_uniform_buffer_);
             pipelines_[i]->CommitArgs();
 
             cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
