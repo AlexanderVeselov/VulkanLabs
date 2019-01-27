@@ -31,7 +31,9 @@ public:
             VkDescriptorSetLayoutBinding binding;
         };
 
-        std::unordered_map<std::uint32_t, VkDescriptorSetLayoutBinding> bindings;
+        std::unordered_map<std::uint32_t, VkDescriptorSetLayoutBinding> vk_bindings;
+        VulkanScopedObject<VkDescriptorSetLayout, vkCreateDescriptorSetLayout, vkDestroyDescriptorSetLayout> layout;
+        VkDescriptorSet vk_descriptor_set;
     };
 
     VulkanShader(VulkanDevice & device, ShaderType shader_type, std::string const& filename);

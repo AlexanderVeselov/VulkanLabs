@@ -31,14 +31,14 @@ static std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> MergeDescr
                 continue;
             }
 
-            for (auto const& binding : ds.second.bindings)
+            for (auto const& binding : ds.second.vk_bindings)
             {
-                auto const& result_binding = result_ds->second.bindings.find(binding.first);
+                auto const& result_binding = result_ds->second.vk_bindings.find(binding.first);
 
-                if (result_binding == result_ds->second.bindings.end())
+                if (result_binding == result_ds->second.vk_bindings.end())
                 {
                     // Binding doesn't exist in result descriptor set
-                    result_ds->second.bindings.emplace(binding);
+                    result_ds->second.vk_bindings.emplace(binding);
                     continue;
                 }
 
@@ -136,23 +136,24 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
     color_blend_state.pAttachments = &color_blend_attachment_state;
 
     // Create descriptor set layout
-    std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> descriptor_sets =
-        MergeDescriptorSets({ pipeline_state.vertex_shader_, pipeline_state.pixel_shader_ });
+    descriptor_sets_ = MergeDescriptorSets({ pipeline_state.vertex_shader_, pipeline_state.pixel_shader_ });
 
-    std::vector<VkDescriptorSetLayout> descriptor_set_layouts(descriptor_sets.size());
+    std::vector<VkDescriptorSetLayout> descriptor_set_layouts(descriptor_sets_.size());
 
     std::size_t ds_index = 0;
-    for (auto const& ds : descriptor_sets)
+    for (auto & ds : descriptor_sets_)
     {
         // TODO: Add empty descriptor sets support
         assert(ds.first == ds_index && "Empty descriptor sets aren't supported!");
+
+        VulkanShader::DescriptorSet & descriptor_set = ds.second;
 
         VkDescriptorSetLayoutCreateInfo layout_create_info = {};
         layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
         // Convert bindings from std::unordered_map to std::vector
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        for (auto const& binding_it : ds.second.bindings)
+        for (auto const& binding_it : descriptor_set.vk_bindings)
         {
             bindings.push_back(binding_it.second);
         }
@@ -160,16 +161,22 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
         layout_create_info.pBindings = bindings.data();
         layout_create_info.bindingCount = static_cast<std::uint32_t>(bindings.size());
 
-        VkResult status = vkCreateDescriptorSetLayout(device_.GetDevice(), &layout_create_info, nullptr, &descriptor_set_layouts[ds_index]);
+        VkResult status = descriptor_set.layout.Create(device_.GetDevice(), layout_create_info);
         VK_THROW_IF_FAILED(status, "Failed to create descriptor set layout!");
 
-        // Add to scoped list
-        ds_layouts_.push_back(VulkanScopedObject<VkDescriptorSetLayout, vkCreateDescriptorSetLayout, vkDestroyDescriptorSetLayout>());
-        ds_layouts_.back().Attach(device_.GetDevice(), descriptor_set_layouts[ds_index]);
+        descriptor_set_layouts[ds_index] = descriptor_set.layout;
+
+        // Allocate descriptor sets
+        VkDescriptorSetAllocateInfo ds_allocate_info = {};
+        ds_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        ds_allocate_info.descriptorPool = device_.GetDescriptorPool();
+        ds_allocate_info.descriptorSetCount = 1;
+        ds_allocate_info.pSetLayouts = &descriptor_set.layout;
+        status = vkAllocateDescriptorSets(device_.GetDevice(), &ds_allocate_info, &descriptor_set.vk_descriptor_set);
+        VK_THROW_IF_FAILED(status, "Failed to allocate descriptor sets!");
 
         ++ds_index;
     }
-
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -259,5 +266,6 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
 
     status = framebuffer_.Create(logical_device, framebuffer_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create framebuffer!");
+
 
 }

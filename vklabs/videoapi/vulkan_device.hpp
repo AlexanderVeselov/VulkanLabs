@@ -29,6 +29,7 @@ public:
     VkPhysicalDevice GetPhysicalDevice() const;
     VkDevice GetDevice() const;
     VkSurfaceKHR GetSurface() const;
+    VkDescriptorPool GetDescriptorPool() const { return descriptor_pool_; }
 
     std::shared_ptr<VulkanSwapchain> CreateSwapchain(std::uint32_t width, std::uint32_t height);
     std::shared_ptr<VulkanShader> CreateVertexShader(std::string const& filename);
@@ -40,7 +41,6 @@ public:
     
     void SubmitGraphicsCommandBuffer(std::shared_ptr<VulkanCommandBuffer> command_buffer);
     void GraphicsWaitIdle();
-
 
     VulkanMemoryManager & GetMemoryManager() { return memory_manager_; }
 

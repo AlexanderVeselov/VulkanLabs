@@ -59,6 +59,7 @@ void VulkanCommandBuffer::BeginGraphics(std::shared_ptr<VulkanGraphicsPipeline> 
     vkCmdBeginRenderPass(command_buffer_, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
+    //vkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->)
 }
 
 void VulkanCommandBuffer::EndGraphics()

@@ -48,6 +48,11 @@ public:
         return object_;
     }
 
+    VkObject* operator& ()
+    {
+        return &object_;
+    }
+
 private:
     VkObject object_;
     VkDevice device_;
