@@ -54,6 +54,7 @@ private:
     VulkanDevice & device_;
     VulkanGraphicsPipelineState pipeline_state_;
     VulkanScopedObject<VkPipelineLayout, vkCreatePipelineLayout, vkDestroyPipelineLayout> pipeline_layout_;
+    std::vector<VulkanScopedObject<VkDescriptorSetLayout, vkCreateDescriptorSetLayout, vkDestroyDescriptorSetLayout>> ds_layouts_;
     VulkanScopedObject<VkRenderPass, vkCreateRenderPass, vkDestroyRenderPass> render_pass_;
     VulkanScopedObject<VkPipeline, vkCreateGraphicsPipelines, vkDestroyPipeline> pipeline_;
     VulkanScopedObject<VkFramebuffer, vkCreateFramebuffer, vkDestroyFramebuffer>  framebuffer_;

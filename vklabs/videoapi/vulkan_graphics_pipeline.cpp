@@ -1,6 +1,59 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_graphics_pipeline.hpp"
 #include "vulkan_image.hpp"
+#include <cassert>
+
+static std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> MergeDescriptorSets(
+    std::vector<std::shared_ptr<VulkanShader>> const& shader_list)
+{
+    if (shader_list.empty())
+    {
+        // Return empty map
+        return std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet>();
+    }
+
+    auto result = shader_list.front()->GetDescriptorSets();
+
+    for (std::size_t shader_idx = 1; shader_idx < shader_list.size(); ++shader_idx)
+    {
+        auto const& shader_descriptor_sets = shader_list[shader_idx]->GetDescriptorSets();
+
+        // Merge shader descriptor sets into result
+        for (auto const& ds : shader_descriptor_sets)
+        {
+            // Find descriptor set with the same index in result
+            auto result_ds = result.find(ds.first);
+
+            if (result_ds == result.end())
+            {
+                // Descriptor set doesn't exist in result map
+                result.emplace(ds);
+                continue;
+            }
+
+            for (auto const& binding : ds.second.bindings)
+            {
+                auto const& result_binding = result_ds->second.bindings.find(binding.first);
+
+                if (result_binding == result_ds->second.bindings.end())
+                {
+                    // Binding doesn't exist in result descriptor set
+                    result_ds->second.bindings.emplace(binding);
+                    continue;
+                }
+
+                // Don't support using the same bindings in different shader stages for now
+                throw std::runtime_error(std::string("MergeDescriptorSets(...): Binding #")
+                    + std::to_string(binding.first) + " in descriptor set "
+                    + std::to_string(ds.first) + " was already used!");
+
+            }
+        }
+    }
+
+    return std::move(result);
+
+}
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGraphicsPipelineState const& pipeline_state)
     : device_(device)
@@ -82,10 +135,46 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
     color_blend_state.attachmentCount = 1;
     color_blend_state.pAttachments = &color_blend_attachment_state;
 
+    // Create descriptor set layout
+    std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> descriptor_sets =
+        MergeDescriptorSets({ pipeline_state.vertex_shader_, pipeline_state.pixel_shader_ });
+
+    std::vector<VkDescriptorSetLayout> descriptor_set_layouts(descriptor_sets.size());
+
+    std::size_t ds_index = 0;
+    for (auto const& ds : descriptor_sets)
+    {
+        // TODO: Add empty descriptor sets support
+        assert(ds.first == ds_index && "Empty descriptor sets aren't supported!");
+
+        VkDescriptorSetLayoutCreateInfo layout_create_info = {};
+        layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+        // Convert bindings from std::unordered_map to std::vector
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
+        for (auto const& binding_it : ds.second.bindings)
+        {
+            bindings.push_back(binding_it.second);
+        }
+
+        layout_create_info.pBindings = bindings.data();
+        layout_create_info.bindingCount = static_cast<std::uint32_t>(bindings.size());
+
+        VkResult status = vkCreateDescriptorSetLayout(device_.GetDevice(), &layout_create_info, nullptr, &descriptor_set_layouts[ds_index]);
+        VK_THROW_IF_FAILED(status, "Failed to create descriptor set layout!");
+
+        // Add to scoped list
+        ds_layouts_.push_back(VulkanScopedObject<VkDescriptorSetLayout, vkCreateDescriptorSetLayout, vkDestroyDescriptorSetLayout>());
+        ds_layouts_.back().Attach(device_.GetDevice(), descriptor_set_layouts[ds_index]);
+
+        ++ds_index;
+    }
+
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 0;
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
+    pipeline_layout_create_info.setLayoutCount = static_cast<std::uint32_t>(descriptor_set_layouts.size());
+    pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
 
     VkDevice logical_device = device_.GetDevice();
 

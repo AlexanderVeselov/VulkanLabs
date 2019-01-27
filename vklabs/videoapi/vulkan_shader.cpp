@@ -154,6 +154,10 @@ static VkShaderStageFlags ShaderTypeToVkShaderStageFlags(VulkanShader::ShaderTyp
         return VK_SHADER_STAGE_VERTEX_BIT;
     case VulkanShader::kPixel:
         return VK_SHADER_STAGE_FRAGMENT_BIT;
+    case VulkanShader::kGeometry:
+        return VK_SHADER_STAGE_GEOMETRY_BIT;
+    case VulkanShader::kCompute:
+        return VK_SHADER_STAGE_COMPUTE_BIT;
     }
 }
 
@@ -197,7 +201,7 @@ VulkanShader::VulkanShader(VulkanDevice & device, ShaderType shader_type, std::s
         FillVertexInputDescriptions(compiler, resources);
     }
 
-    FillBindings(compiler, resources);
+    CreateDescriptorSets(compiler, resources);
 }
 
 void VulkanShader::FillVertexInputDescriptions(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources)
@@ -222,10 +226,8 @@ void VulkanShader::FillVertexInputDescriptions(spirv_cross::Compiler const& comp
     vertex_input_binding_desc_.push_back(vertex_binding_desc);
 }
 
-void VulkanShader::FillBindings(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources)
+void VulkanShader::CreateDescriptorSets(spirv_cross::Compiler const& compiler, spirv_cross::ShaderResources const& resources)
 {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-
     VkDescriptorSetLayoutBinding binding;
     // TODO: array support?
     binding.descriptorCount = 1;
@@ -234,52 +236,93 @@ void VulkanShader::FillBindings(spirv_cross::Compiler const& compiler, spirv_cro
 
     for (spirv_cross::Resource const& resource : resources.uniform_buffers)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        bindings.push_back(binding);
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
 
     for (spirv_cross::Resource const& resource : resources.storage_buffers)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        bindings.push_back(binding);
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
 
     for (spirv_cross::Resource const& resource : resources.storage_images)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        bindings.push_back(binding);
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
 
     for (spirv_cross::Resource const& resource : resources.sampled_images)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bindings.push_back(binding);
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
 
     for (spirv_cross::Resource const& resource : resources.separate_images)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        bindings.push_back(binding);
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
     }
 
     for (spirv_cross::Resource const& resource : resources.separate_samplers)
     {
-        binding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-        bindings.push_back(binding);
-    }
+        std::uint32_t descriptor_set_idx = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
 
-    VkDescriptorSetLayoutCreateInfo desc_set_layout_create_info = {};
-    desc_set_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    desc_set_layout_create_info.bindingCount = static_cast<std::uint32_t>(bindings.size());
-    desc_set_layout_create_info.pBindings = bindings.data();
-    //vkDestroyDescriptorSetLayout
-    //vkCreateDescriptorSetLayout(device_.GetDevice(), )
+        if (descriptor_sets_.find(descriptor_set_idx) == descriptor_sets_.end())
+        {
+            descriptor_sets_.emplace(descriptor_set_idx, DescriptorSet());
+        }
+
+        std::uint32_t binding_idx = compiler.get_decoration(resource.id, spv::DecorationBinding);
+        binding.binding = binding_idx;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        descriptor_sets_[descriptor_set_idx].bindings.emplace(binding_idx, binding);
+    }
 
 }
 
