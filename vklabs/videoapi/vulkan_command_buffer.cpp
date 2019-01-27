@@ -59,7 +59,16 @@ void VulkanCommandBuffer::BeginGraphics(std::shared_ptr<VulkanGraphicsPipeline> 
     vkCmdBeginRenderPass(command_buffer_, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetPipeline());
-    //vkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->)
+
+    auto const& descriptor_sets = pipeline->GetDescriptorSets();
+    std::vector<VkDescriptorSet> vk_descriptor_sets;
+    for (auto const& ds : descriptor_sets)
+    {
+        vk_descriptor_sets.push_back(ds.second.vk_descriptor_set);
+    }
+
+    vkCmdBindDescriptorSets(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetLayout(),
+        0, static_cast<std::uint32_t>(vk_descriptor_sets.size()), vk_descriptor_sets.data(), 0, nullptr);
 }
 
 void VulkanCommandBuffer::EndGraphics()

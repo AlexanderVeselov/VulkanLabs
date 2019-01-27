@@ -77,6 +77,10 @@ namespace vklabs
         vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         vertex_buffer_->Write(vertices.data());
 
+        float data[3] = { 1.0f, 0.0f, 0.0f };
+        uniform_buffer_ = device_->CreateBuffer(sizeof(data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        uniform_buffer_->Write(&data);
+
         for (std::size_t i = 0; i < swapchain_images_count; ++i)
         {
             VulkanGraphicsPipelineState pipeline_state(settings.width, settings.height);
@@ -85,6 +89,8 @@ namespace vklabs
             pipeline_state.SetColorAttachment(0, swapchain_->GetImage(i));
 
             pipelines_[i] = device_->CreateGraphicsPipeline(pipeline_state);
+            pipelines_[i]->SetArg(0, 0, uniform_buffer_);
+            pipelines_[i]->CommitArgs();
 
             cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
             cmd_buffers_[i]->Begin();

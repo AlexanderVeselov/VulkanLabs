@@ -28,7 +28,7 @@ namespace vklabs
         std::vector<std::shared_ptr<VulkanGraphicsPipeline>> pipelines_;
         std::vector<std::shared_ptr<VulkanCommandBuffer>> cmd_buffers_;
         std::shared_ptr<VulkanBuffer> vertex_buffer_;
-
+        std::shared_ptr<VulkanBuffer> uniform_buffer_;
 
     };
 

@@ -8,6 +8,7 @@
 #include <memory>
 
 class VulkanImage;
+class VulkanBuffer;
 
 class VulkanGraphicsPipelineState
 {
@@ -45,10 +46,15 @@ class VulkanGraphicsPipeline
 {
 public:
     VulkanGraphicsPipeline(VulkanDevice & device, VulkanGraphicsPipelineState const& pipeline_state);
+    void CommitArgs();
+    void SetArg(std::uint32_t set, std::uint32_t binding, std::shared_ptr<VulkanBuffer> buffer);
+
     VkRenderPass GetRenderPass() const { return render_pass_; }
     VkPipeline GetPipeline() const { return pipeline_; }
     VkFramebuffer GetFramebuffer() const { return framebuffer_; }
     VkExtent2D GetExtent() const { return extent_; }
+    VkPipelineLayout GetLayout() const { return pipeline_layout_; }
+    std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> const& GetDescriptorSets() const { return descriptor_sets_; }
 
 private:
     VulkanDevice & device_;

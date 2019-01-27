@@ -28,10 +28,16 @@ public:
     {
         struct Binding
         {
-            VkDescriptorSetLayoutBinding binding;
+            union
+            {
+                VkDescriptorImageInfo image_info;
+                VkDescriptorBufferInfo buffer_info;
+            };
+
+            VkDescriptorSetLayoutBinding vk_binding;
         };
 
-        std::unordered_map<std::uint32_t, VkDescriptorSetLayoutBinding> vk_bindings;
+        std::unordered_map<std::uint32_t, Binding> bindings;
         VulkanScopedObject<VkDescriptorSetLayout, vkCreateDescriptorSetLayout, vkDestroyDescriptorSetLayout> layout;
         VkDescriptorSet vk_descriptor_set;
     };

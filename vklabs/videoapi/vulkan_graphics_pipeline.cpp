@@ -1,6 +1,7 @@
 #include "vulkan_exception.hpp"
 #include "vulkan_graphics_pipeline.hpp"
 #include "vulkan_image.hpp"
+#include "vulkan_buffer.hpp"
 #include <cassert>
 
 static std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> MergeDescriptorSets(
@@ -31,14 +32,14 @@ static std::unordered_map<std::uint32_t, VulkanShader::DescriptorSet> MergeDescr
                 continue;
             }
 
-            for (auto const& binding : ds.second.vk_bindings)
+            for (auto const& binding : ds.second.bindings)
             {
-                auto const& result_binding = result_ds->second.vk_bindings.find(binding.first);
+                auto const& result_binding = result_ds->second.bindings.find(binding.first);
 
-                if (result_binding == result_ds->second.vk_bindings.end())
+                if (result_binding == result_ds->second.bindings.end())
                 {
                     // Binding doesn't exist in result descriptor set
-                    result_ds->second.vk_bindings.emplace(binding);
+                    result_ds->second.bindings.emplace(binding);
                     continue;
                 }
 
@@ -153,9 +154,9 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
 
         // Convert bindings from std::unordered_map to std::vector
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        for (auto const& binding_it : descriptor_set.vk_bindings)
+        for (auto const& binding_it : descriptor_set.bindings)
         {
-            bindings.push_back(binding_it.second);
+            bindings.push_back(binding_it.second.vk_binding);
         }
 
         layout_create_info.pBindings = bindings.data();
@@ -267,5 +268,67 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanDevice & device, VulkanGrap
     status = framebuffer_.Create(logical_device, framebuffer_create_info);
     VK_THROW_IF_FAILED(status, "Failed to create framebuffer!");
 
+}
+
+void VulkanGraphicsPipeline::SetArg(std::uint32_t set, std::uint32_t binding, std::shared_ptr<VulkanBuffer> buffer)
+{
+    auto set_it = descriptor_sets_.find(set);
+
+    THROW_IF(set_it == descriptor_sets_.end(), std::string("Pipeline doesn't have bound descriptor set ") + std::to_string(set));
+
+    auto binding_it = set_it->second.bindings.find(binding);
+
+    THROW_IF(binding_it == set_it->second.bindings.end(), std::string("Pipeline doesn't use binding ") + std::to_string(binding) + " in descriptor set " + std::to_string(set));
+
+    VulkanShader::DescriptorSet::Binding & b = binding_it->second;
+
+    THROW_IF(b.vk_binding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER && b.vk_binding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        std::string("Binding ") + std::to_string(binding) + " in descriptor set " + std::to_string(set) + " is not a buffer binding");
+
+    b.buffer_info.buffer = buffer->GetBuffer();
+    b.buffer_info.offset = 0;
+    b.buffer_info.range = VK_WHOLE_SIZE;
+
+}
+
+void VulkanGraphicsPipeline::CommitArgs()
+{
+    std::vector<VkWriteDescriptorSet> descriptor_writes;
+
+    for (auto const& ds : descriptor_sets_)
+    {
+        for (auto const& b : ds.second.bindings)
+        {
+            VulkanShader::DescriptorSet::Binding const& binding = b.second;
+
+            VkWriteDescriptorSet descriptor_write = {};
+            descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_write.dstSet = ds.second.vk_descriptor_set;
+            descriptor_write.dstBinding = b.first;
+            descriptor_write.dstArrayElement = 0;
+            descriptor_write.descriptorCount = 1;
+            descriptor_write.descriptorType = binding.vk_binding.descriptorType;
+
+            switch (descriptor_write.descriptorType)
+            {
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                descriptor_write.pBufferInfo = &binding.buffer_info;
+                break;
+            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            case VK_DESCRIPTOR_TYPE_SAMPLER:
+                descriptor_write.pImageInfo = &binding.image_info;
+                break;
+            default:
+                assert(!"Not supported!");
+            }
+
+            descriptor_writes.push_back(descriptor_write);
+        }
+    }
+
+    vkUpdateDescriptorSets(device_.GetDevice(), static_cast<std::uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
 
 }
