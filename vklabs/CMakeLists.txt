@@ -26,6 +26,10 @@ set(VIDEOAPI_SOURCES
 set(SOURCES
     ${VIDEOAPI_SOURCES}
     app_settings.hpp
+    entity.hpp
+    entity.cpp
+    entity_manager.hpp
+    entity_manager.cpp
 )
 
 source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})

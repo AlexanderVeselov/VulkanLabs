@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
-#include "vk_context.hpp"
+//#include "videoapi/vk_context.hpp"
+#include "entity_manager.hpp"
+#include "entity.hpp"
 #include <memory>
 #include <vector>
-
+/*
 class VkTest : public ::testing::Test
 {};
 
@@ -32,6 +34,16 @@ TEST_F(VkTest, DeviceCreation)
     std::shared_ptr<vklabs::Device> device;
     ASSERT_NO_THROW(device = context->CreateDevice(0, deviceExtensions));
 
+}
+*/
+class EntityTest : public ::testing::Test
+{};
+
+TEST_F(EntityTest, EntityCreation)
+{
+    EntityManager entity_manager;
+    auto entity = entity_manager.CreateEntity("some_entity");
+    entity->Ping();
 }
 
 int main(int argc, char** argv)
