@@ -46,9 +46,14 @@ TEST_F(EntityTest, EntityCreation)
     ComponentManager component_manager;
     EntityManager entity_manager(component_manager);
     auto entity = entity_manager.CreateEntity("some_entity");
-    Transform transform;
-    transform.Ping();
     entity->Ping();
+
+    Transform* transform = component_manager.CreateComponent<Transform>(0);
+    transform->Ping();
+    std::cout << "Entity id: " << transform->GetEntityId() << "\n";
+
+    ASSERT_TRUE(transform == component_manager.GetComponent<Transform>(transform->GetEntityId()));
+
 }
 
 int main(int argc, char** argv)
