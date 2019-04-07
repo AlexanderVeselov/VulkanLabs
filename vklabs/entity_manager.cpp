@@ -1,29 +1,49 @@
 #include "entity_manager.hpp"
+#include "component_manager.hpp"
 #include "entity.hpp"
 #include <string>
-#include <unordered_map>
+#include <map>
 
 namespace
 {
-    std::unordered_map<std::string, Entity* (*)(EntityManager &, EntityId)> g_entity_type_2_factory_func;
+    struct EntityFactoryMap
+    {
+    private:
+        std::unordered_map<std::string,
+            Entity* (*)(EntityManager &, ComponentManager &, EntityId)>
+            entity_factory_map_;
+
+    public:
+        static decltype(entity_factory_map_) & GetMap()
+        {
+            static EntityFactoryMap map;
+            return map.entity_factory_map_;
+        }
+
+    };
+
 }
 
-void RegisterEntityFactoryFunc(char const* entity_type, Entity* (*func)(EntityManager &, EntityId))
+void RegisterEntityFactoryFunc(char const* entity_type, Entity* (*func)(EntityManager &, ComponentManager &, EntityId))
 {
-    g_entity_type_2_factory_func.emplace(entity_type, func);
+    EntityFactoryMap::GetMap().emplace(entity_type, func);
+}
+
+EntityManager::EntityManager(ComponentManager & component_manager)
+    : component_manager_(component_manager)
+{
+
 }
 
 std::shared_ptr<Entity> EntityManager::CreateEntity(char const* entity_type)
 {
-    auto it = g_entity_type_2_factory_func.find(entity_type);
+    auto it = EntityFactoryMap::GetMap().find(entity_type);
 
-    if (it == g_entity_type_2_factory_func.end())
+    if (it == EntityFactoryMap::GetMap().end())
     {
         throw std::runtime_error("Failed to create entity: Unregistered entity type!");
     }
 
-    Entity* entity = it->second(*this, next_entity_id_++);
-    std::shared_ptr<Entity> ptr;
-    ptr.reset(entity);
-    return ptr;
+    Entity* entity = it->second(*this, component_manager_, next_entity_id_++);
+    return std::shared_ptr<Entity>(entity);
 }

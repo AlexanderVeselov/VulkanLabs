@@ -30,6 +30,15 @@ set(SOURCES
     entity.cpp
     entity_manager.hpp
     entity_manager.cpp
+    component.hpp
+    component.cpp
+    component_manager.hpp
+    component_manager.cpp
+    transform.hpp
+    transform.cpp
+    renderable.hpp
+    mesh.hpp
+    mesh.cpp
 )
 
 source_group("VideoAPI" FILES ${VIDEOAPI_SOURCES})

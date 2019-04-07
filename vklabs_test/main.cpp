@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 //#include "videoapi/vk_context.hpp"
 #include "entity_manager.hpp"
+#include "component_manager.hpp"
+#include "transform.hpp"
 #include "entity.hpp"
 #include <memory>
 #include <vector>
@@ -41,8 +43,11 @@ class EntityTest : public ::testing::Test
 
 TEST_F(EntityTest, EntityCreation)
 {
-    EntityManager entity_manager;
+    ComponentManager component_manager;
+    EntityManager entity_manager(component_manager);
     auto entity = entity_manager.CreateEntity("some_entity");
+    Transform transform;
+    transform.Ping();
     entity->Ping();
 }
 
