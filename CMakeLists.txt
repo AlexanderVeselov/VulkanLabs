@@ -10,6 +10,7 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
 add_subdirectory(dependencies/googletest)
+add_subdirectory(gpuapi)
 add_subdirectory(vklabs)
 add_subdirectory(vklabs_exe)
 add_subdirectory(vklabs_test)

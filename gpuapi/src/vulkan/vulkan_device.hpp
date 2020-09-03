@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-class VulkanAPI;
+class VulkanApi;
 class VulkanSwapchain;
 class VulkanShader;
 class VulkanGraphicsPipelineState;
@@ -19,7 +19,7 @@ class VulkanMemoryManager;
 class VulkanDevice
 {
 public:
-    VulkanDevice(VulkanAPI & video_api, VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names, VulkanSharedObject<VkSurfaceKHR> surface);
+    VulkanDevice(VulkanApi & video_api, VkPhysicalDevice physical_device, std::vector<char const*> const& enabled_layer_names, std::vector<char const*> const& enabled_extension_names, VulkanSharedObject<VkSurfaceKHR> surface);
 
     std::uint32_t GetGraphicsQueueFamilyIndex() const;
     std::uint32_t GetComputeQueueFamilyIndex() const;
@@ -45,7 +45,7 @@ public:
     VulkanMemoryManager & GetMemoryManager() { return memory_manager_; }
 
 private:
-    VulkanAPI & video_api_;
+    VulkanApi & video_api_;
     VulkanMemoryManager memory_manager_;
 
     void FindQueueFamilyIndices();

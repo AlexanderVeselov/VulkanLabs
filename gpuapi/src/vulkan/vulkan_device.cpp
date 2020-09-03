@@ -17,7 +17,7 @@ namespace
     const std::uint32_t kInvalidQueueFamilyIndex = ~0u;
 }
 
-VulkanDevice::VulkanDevice(VulkanAPI & video_api,
+VulkanDevice::VulkanDevice(VulkanApi & video_api,
                            VkPhysicalDevice physical_device,
                            std::vector<char const*> const& enabled_layer_names,
                            std::vector<char const*> const& enabled_extension_names,

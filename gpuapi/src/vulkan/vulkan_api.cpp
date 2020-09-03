@@ -1,7 +1,10 @@
-#include "videoapi/vulkan_api.hpp"
-#include "videoapi/vulkan_exception.hpp"
-#include "videoapi/vulkan_device.hpp"
-#include "videoapi/vulkan_validation.hpp"
+#include "vulkan_api.hpp"
+#include "vulkan_exception.hpp"
+#include "vulkan_device.hpp"
+#include "vulkan_validation.hpp"
+
+namespace gpu
+{
 
 static void CheckVulkanLayersSupport(std::vector<char const*> const& required_layer_names)
 {
@@ -34,7 +37,7 @@ static void CheckVulkanLayersSupport(std::vector<char const*> const& required_la
 
 }
 
-VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool enable_validation)
+VulkanApi::VulkanApi(std::vector<char const*> const& enabled_extensions, bool enable_validation)
     : validation_enabled_(enable_validation)
 {
     // Create basic vulkan instance
@@ -48,7 +51,7 @@ VulkanAPI::VulkanAPI(std::vector<char const*> const& enabled_extensions, bool en
 
 }
 
-VulkanAPI::~VulkanAPI()
+VulkanApi::~VulkanApi()
 {
     if (debug_messenger_)
     {
@@ -56,7 +59,7 @@ VulkanAPI::~VulkanAPI()
     }
 }
 
-void VulkanAPI::CreateInstance(std::vector<char const*> enabled_extensions)
+void VulkanApi::CreateInstance(std::vector<char const*> enabled_extensions)
 {
     // Setup VkApplicationInfo
     VkApplicationInfo app_info = {};
@@ -65,7 +68,7 @@ void VulkanAPI::CreateInstance(std::vector<char const*> enabled_extensions)
     app_info.applicationVersion = 1;
     app_info.pEngineName = "No Engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.apiVersion = VK_API_VERSION_1_0;
+    app_info.apiVersion = VK_API_VERSION_1_2;
 
     // Create Vulkan instance
 
@@ -97,7 +100,7 @@ void VulkanAPI::CreateInstance(std::vector<char const*> enabled_extensions)
     });
 }
 
-void VulkanAPI::CreateDebugMessenger()
+void VulkanApi::CreateDebugMessenger()
 {
     // Create debug utils messenger
     VkDebugUtilsMessengerCreateInfoEXT messenger_create_info = {};
@@ -119,7 +122,7 @@ void VulkanAPI::CreateDebugMessenger()
 
 }
 
-std::shared_ptr<VulkanDevice> VulkanAPI::CreateDevice(std::vector<char const*> const& enabled_extensions, std::uint32_t physical_device_index, std::function<VkSurfaceKHR(VkInstance)> surface_creation_callback)
+std::shared_ptr<VulkanDevice> VulkanApi::CreateDevice(std::vector<char const*> const& enabled_extensions, std::uint32_t physical_device_index, std::function<VkSurfaceKHR(VkInstance)> surface_creation_callback)
 {
     // Get physical device count
     std::uint32_t physical_device_count = 0;
@@ -141,7 +144,9 @@ std::shared_ptr<VulkanDevice> VulkanAPI::CreateDevice(std::vector<char const*> c
 
 }
 
-VulkanSharedObject<VkInstance> VulkanAPI::GetInstance() const
+VulkanSharedObject<VkInstance> VulkanApi::GetInstance() const
 {
     return instance_;
 }
+
+} // namespace gpu
