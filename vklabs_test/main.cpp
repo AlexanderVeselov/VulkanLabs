@@ -1,11 +1,15 @@
 #include "gtest/gtest.h"
 //#include "videoapi/vk_context.hpp"
-#include "entity_manager.hpp"
-#include "component_manager.hpp"
-#include "transform.hpp"
-#include "entity.hpp"
+//#include "entity_manager.hpp"
+//#include "component_manager.hpp"
+//#include "transform.hpp"
+//#include "entity.hpp"
 #include <memory>
 #include <vector>
+
+#include "gpu_api.hpp"
+#include "gpu_device.hpp"
+
 /*
 class VkTest : public ::testing::Test
 {};
@@ -37,7 +41,7 @@ TEST_F(VkTest, DeviceCreation)
     ASSERT_NO_THROW(device = context->CreateDevice(0, deviceExtensions));
 
 }
-*/
+
 class EntityTest : public ::testing::Test
 {};
 
@@ -53,6 +57,17 @@ TEST_F(EntityTest, EntityCreation)
     std::cout << "Entity id: " << transform->GetEntityId() << "\n";
 
     ASSERT_TRUE(transform == component_manager.GetComponent<Transform>(transform->GetEntityId()));
+
+}
+*/
+
+class GpuApiTest : public ::testing::Test
+{};
+
+TEST_F(GpuApiTest, DeviceCreation)
+{
+    auto gpu_api = gpu::Api::CreateD3D12Api();
+    gpu::DevicePtr device = gpu_api->CreateDevice();
 
 }
 
