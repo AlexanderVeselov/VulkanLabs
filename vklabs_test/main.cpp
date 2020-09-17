@@ -9,6 +9,7 @@
 
 #include "gpu_api.hpp"
 #include "gpu_device.hpp"
+#include "gpu_pipeline.hpp"
 
 /*
 class VkTest : public ::testing::Test
@@ -64,11 +65,11 @@ TEST_F(EntityTest, EntityCreation)
 class GpuApiTest : public ::testing::Test
 {};
 
-TEST_F(GpuApiTest, DeviceCreation)
+TEST_F(GpuApiTest, PipelineCreation)
 {
     auto gpu_api = gpu::Api::CreateD3D12Api();
     gpu::DevicePtr device = gpu_api->CreateDevice();
-
+    auto pipeline = device->CreateGraphicsPipeline();
 }
 
 int main(int argc, char** argv)
