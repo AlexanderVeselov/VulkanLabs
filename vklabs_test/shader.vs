@@ -1,6 +1,6 @@
 struct VS_INPUT
 {
-    float3 position : POSITION0;
+//    float3 position : POSITION0;
 };
 
 struct VS_OUTPUT
@@ -9,11 +9,11 @@ struct VS_OUTPUT
     float2 texcoord : TEXCOORD0;
 };
 
-VS_OUTPUT main(VS_INPUT input)
+VS_OUTPUT main(uint vertex_id : SV_VERTEXID)//VS_INPUT input)
 {
     VS_OUTPUT output;
-    output.position = float4(input.position, 1.0);
-    output.texcoord = input.position.xy;
+    output.texcoord = float2(vertex_id & 2, (vertex_id << 1) & 2);
+    output.position = float4(output.texcoord * 2.0f - 1.0f, 0.0f, 1.0f);
 
     return output;
 }

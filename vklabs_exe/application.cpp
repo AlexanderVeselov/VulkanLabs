@@ -1,9 +1,16 @@
 #include "application.hpp"
-#include "videoapi/vulkan_command_buffer.hpp"
+
+#include "gpu_api.hpp"
+#include "gpu_device.hpp"
+#include "gpu_swapchain.hpp"
+
 #include <stdexcept>
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan.h>
+
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 namespace vklabs
 {
@@ -29,37 +36,22 @@ namespace vklabs
         }
         
         // Get GLFW requested extensions
+        /*
         std::uint32_t glfw_extension_count;
         char const** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
         std::vector<char const*> required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+        */
 
-        videoapi_.reset(new VulkanAPI(required_extensions, true));
+        videoapi_.reset(gpu::Api::CreateD3D12Api());
+        device_ = videoapi_->CreateDevice();
 
-        const std::vector<const char*> device_extensions =
-        {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
+        HWND hwnd = glfwGetWin32Window(window_.get());
 
-        GLFWwindow* glfw_window = window_.get();
-        device_ = videoapi_->CreateDevice(device_extensions, 0, [glfw_window](VkInstance instance)
-        {
-            VkSurfaceKHR surface;
-            VkResult status = glfwCreateWindowSurface(instance, glfw_window, nullptr, &surface);
-            if (status != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to create window surface!");
-            }
-
-            return surface;
-        });
-
-        swapchain_ = device_->CreateSwapchain(settings.width, settings.height);
-        std::shared_ptr<VulkanShader> vertex_shader = device_->CreateVertexShader("../vklabs/shaders/shader.vert.spv");
-        std::shared_ptr<VulkanShader> pixel_shader = device_->CreatePixelShader("../vklabs/shaders/shader.frag.spv");
+        swapchain_ = device_->CreateSwapchain(hwnd, settings.width, settings.height);
 
         std::size_t swapchain_images_count = swapchain_->GetImagesCount();
-        pipelines_.resize(swapchain_images_count);
-        cmd_buffers_.resize(swapchain_images_count);
+        //pipelines_.resize(swapchain_images_count);
+        //cmd_buffers_.resize(swapchain_images_count);
 
         struct Vertex
         {
@@ -74,6 +66,7 @@ namespace vklabs
             {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
         };
 
+        /*
         vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         vertex_buffer_->Write(vertices.data());
 
@@ -105,6 +98,7 @@ namespace vklabs
             cmd_buffers_[i]->EndGraphics();
             cmd_buffers_[i]->End();
         }
+        */
 
         glfwMakeContextCurrent(window_.get());
     }
@@ -117,11 +111,11 @@ namespace vklabs
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
 
-            device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
-            swapchain_->Present();
+            //device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
+            //swapchain_->Present();
         }
 
-        device_->GraphicsWaitIdle();
+        //device_->GraphicsWaitIdle();
 
     }
 

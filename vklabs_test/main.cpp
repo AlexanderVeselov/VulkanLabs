@@ -10,6 +10,8 @@
 #include "gpu_api.hpp"
 #include "gpu_device.hpp"
 #include "gpu_pipeline.hpp"
+#include "gpu_queue.hpp"
+#include "gpu_command_buffer.hpp"
 
 /*
 class VkTest : public ::testing::Test
@@ -69,7 +71,12 @@ TEST_F(GpuApiTest, PipelineCreation)
 {
     auto gpu_api = gpu::Api::CreateD3D12Api();
     gpu::DevicePtr device = gpu_api->CreateDevice();
-    auto pipeline = device->CreateGraphicsPipeline();
+    auto pipeline = device->CreateGraphicsPipeline("shader.vs", "shader.ps");
+    auto& gfx_queue = device->GetQueue(gpu::QueueType::kGraphics);
+    auto cmd_buffer = gfx_queue.CreateCommandBuffer();
+    cmd_buffer->BindGraphicsPipeline(pipeline);
+    cmd_buffer->Draw(1, 0);
+
 }
 
 int main(int argc, char** argv)
