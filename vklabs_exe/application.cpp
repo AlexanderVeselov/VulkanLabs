@@ -112,7 +112,7 @@ namespace vklabs
             glfwPollEvents();
 
             //device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
-            //swapchain_->Present();
+            swapchain_->Present();
         }
 
         //device_->GraphicsWaitIdle();

@@ -79,6 +79,13 @@ TEST_F(GpuApiTest, PipelineCreation)
 
 }
 
+TEST_F(GpuApiTest, ImageCreation)
+{
+    auto gpu_api = gpu::Api::CreateD3D12Api();
+    gpu::DevicePtr device = gpu_api->CreateDevice();
+    gpu::ImagePtr image = device->CreateImage(256, 256);
+}
+
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
