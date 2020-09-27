@@ -3,6 +3,7 @@
 #include "gpu_api.hpp"
 #include "gpu_device.hpp"
 #include "gpu_swapchain.hpp"
+#include "gpu_queue.hpp"
 
 #include <stdexcept>
 #include <iostream>
@@ -49,9 +50,20 @@ namespace vklabs
 
         swapchain_ = device_->CreateSwapchain(hwnd, settings.width, settings.height);
 
-        std::size_t swapchain_images_count = swapchain_->GetImagesCount();
+        auto& swapchain_images = swapchain_->GetImages();
         //pipelines_.resize(swapchain_images_count);
-        //cmd_buffers_.resize(swapchain_images_count);
+        //cmd_buffers_.resize(swapchain_images.size());
+
+        auto& queue = device_->GetQueue(gpu::QueueType::kGraphics);
+        for (auto i = 0; i < swapchain_images.size(); ++i)
+        {
+            auto cmd_buffer = queue.CreateCommandBuffer();
+            auto& image = swapchain_images[i];
+            cmd_buffer->ClearImage(image, 1.0f, 0.5f, 0.5f, 1.0f);
+            cmd_buffer->End();
+
+            cmd_buffers_.push_back(std::move(cmd_buffer));
+        }
 
         struct Vertex
         {
@@ -105,14 +117,18 @@ namespace vklabs
 
     void Application::Run()
     {
+        auto& queue = device_->GetQueue(gpu::QueueType::kGraphics);
+
+        std::uint32_t frame_index = 0;
         while (!glfwWindowShouldClose(window_.get()))
         {
             // Main loop
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
 
-            //device_->SubmitGraphicsCommandBuffer(cmd_buffers_[swapchain_->GetCurrentImageIndex()]);
+            queue.Submit(cmd_buffers_[frame_index]);
             swapchain_->Present();
+            frame_index = (frame_index + 1) % cmd_buffers_.size();
         }
 
         //device_->GraphicsWaitIdle();
