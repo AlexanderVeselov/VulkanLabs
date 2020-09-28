@@ -59,7 +59,7 @@ namespace vklabs
         {
             auto cmd_buffer = queue.CreateCommandBuffer();
             auto& image = swapchain_images[i];
-            cmd_buffer->ClearImage(image, 1.0f, 0.5f, 0.5f, 1.0f);
+            cmd_buffer->ClearImage(image, 0.5f, 0.5f, 1.0f, 1.0f);
             cmd_buffer->End();
 
             cmd_buffers_.push_back(std::move(cmd_buffer));
