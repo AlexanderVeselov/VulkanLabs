@@ -57,12 +57,24 @@ namespace vklabs
         auto& queue = device_->GetQueue(gpu::QueueType::kGraphics);
         for (auto i = 0; i < swapchain_images.size(); ++i)
         {
-            auto cmd_buffer = queue.CreateCommandBuffer();
             auto& image = swapchain_images[i];
+
+            gpu::GraphicsPipelineDesc pipeline_desc;
+            pipeline_desc.vs_filename = "shader.vs";
+            pipeline_desc.ps_filename = "shader.ps";
+            pipeline_desc.color_attachments.push_back(image);
+            auto pipeline = device_->CreateGraphicsPipeline(pipeline_desc);
+
+            auto cmd_buffer = queue.CreateCommandBuffer();
+            cmd_buffer->TransitionBarrier(image, gpu::ImageLayout::kPresent, gpu::ImageLayout::kRenderTarget);
             cmd_buffer->ClearImage(image, 0.5f, 0.5f, 1.0f, 1.0f);
+            cmd_buffer->BindGraphicsPipeline(pipeline);
+            cmd_buffer->Draw(3, 0);
+            cmd_buffer->TransitionBarrier(image, gpu::ImageLayout::kRenderTarget, gpu::ImageLayout::kPresent);
             cmd_buffer->End();
 
             cmd_buffers_.push_back(std::move(cmd_buffer));
+            pipelines_.push_back(std::move(pipeline));
         }
 
         struct Vertex
@@ -126,12 +138,14 @@ namespace vklabs
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
 
-            queue.Submit(cmd_buffers_[frame_index]);
-            swapchain_->Present();
-            frame_index = (frame_index + 1) % cmd_buffers_.size();
-        }
+            if (frame_index == 0)
+            {
+                queue.Submit(cmd_buffers_[frame_index]);
+                swapchain_->Present();
+                frame_index = (frame_index + 1) % cmd_buffers_.size();
+            }
 
-        //device_->GraphicsWaitIdle();
+        }
 
     }
 

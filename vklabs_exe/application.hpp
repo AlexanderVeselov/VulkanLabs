@@ -4,6 +4,7 @@
 #include "app_settings.hpp"
 #include "gpu_types.hpp"
 #include "gpu_command_buffer.hpp"
+#include "gpu_pipeline.hpp"
 
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -24,11 +25,8 @@ namespace vklabs
         std::unique_ptr<gpu::Api> videoapi_;
         std::unique_ptr<gpu::Device> device_;
         std::unique_ptr<gpu::Swapchain> swapchain_;
-        //std::vector<std::shared_ptr<VulkanGraphicsPipeline>> pipelines_;
+        std::vector<gpu::GraphicsPipelinePtr> pipelines_;
         std::vector<gpu::CommandBufferPtr> cmd_buffers_;
-        //std::shared_ptr<VulkanBuffer> vertex_buffer_;
-        //std::shared_ptr<VulkanBuffer> vs_uniform_buffer_;
-        //std::shared_ptr<VulkanBuffer> ps_uniform_buffer_;
 
     };
 
