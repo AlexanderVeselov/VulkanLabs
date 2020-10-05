@@ -5,6 +5,7 @@
 #include "gpu_types.hpp"
 #include "gpu_command_buffer.hpp"
 #include "gpu_pipeline.hpp"
+#include "gpu_sync.hpp"
 
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -27,6 +28,7 @@ namespace vklabs
         std::unique_ptr<gpu::Swapchain> swapchain_;
         std::vector<gpu::GraphicsPipelinePtr> pipelines_;
         std::vector<gpu::CommandBufferPtr> cmd_buffers_;
+        std::vector<gpu::FencePtr> fences_;
 
     };
 

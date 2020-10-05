@@ -75,6 +75,7 @@ namespace vklabs
 
             cmd_buffers_.push_back(std::move(cmd_buffer));
             pipelines_.push_back(std::move(pipeline));
+            fences_.push_back(device_->CreateFence());
         }
 
         struct Vertex
@@ -138,9 +139,10 @@ namespace vklabs
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
 
-            if (frame_index == 0)
+            //if (frame_index == 0)
             {
-                queue.Submit(cmd_buffers_[frame_index]);
+                fences_[frame_index]->Wait();
+                queue.Submit(cmd_buffers_[frame_index], fences_[frame_index]);
                 swapchain_->Present();
                 frame_index = (frame_index + 1) % cmd_buffers_.size();
             }
