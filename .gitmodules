@@ -4,3 +4,6 @@
 [submodule "dependencies/tinyobjloader"]
 	path = dependencies/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader
+[submodule "dependencies/gpuapi"]
+	path = dependencies/gpuapi
+	url = https://github.com/AlexanderVeselov/GpuApi

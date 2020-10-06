@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <typeinfo>
+#include <stdexcept>
 
 constexpr std::size_t kComponentPoolGrowCount = 1024u;
 

@@ -1,4 +1,5 @@
 #include "component.hpp"
+#include <typeinfo>
 
 Component::Component(EntityId entity_id)
     : entity_id_(entity_id)
