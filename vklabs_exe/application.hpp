@@ -6,6 +6,7 @@
 #include "gpu_command_buffer.hpp"
 #include "gpu_pipeline.hpp"
 #include "gpu_sync.hpp"
+#include "gpu_buffer.hpp"
 
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -29,6 +30,7 @@ namespace vklabs
         std::vector<gpu::GraphicsPipelinePtr> pipelines_;
         std::vector<gpu::CommandBufferPtr> cmd_buffers_;
         std::vector<gpu::FencePtr> fences_;
+        gpu::BufferPtr vertex_buffer_;
 
     };
 
