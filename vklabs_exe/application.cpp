@@ -49,10 +49,26 @@ namespace vklabs
         HWND hwnd = glfwGetWin32Window(window_.get());
 
         swapchain_ = device_->CreateSwapchain(hwnd, settings.width, settings.height);
-
         auto& swapchain_images = swapchain_->GetImages();
-        //pipelines_.resize(swapchain_images_count);
-        //cmd_buffers_.resize(swapchain_images.size());
+
+        struct Vertex
+        {
+            float pos[3];
+            float color[3];
+        };
+
+        const std::vector<Vertex> vertices =
+        {
+            {{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+        };
+
+        // Create vertex buffer and upload data
+        vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex));
+        void* mapped_buffer = vertex_buffer_->Map();
+        std::memcpy(mapped_buffer, vertices.data(), vertices.size() * sizeof(Vertex));
+        vertex_buffer_->Unmap();
 
         auto& queue = device_->GetQueue(gpu::QueueType::kGraphics);
         for (auto i = 0; i < swapchain_images.size(); ++i)
@@ -69,6 +85,7 @@ namespace vklabs
             cmd_buffer->TransitionBarrier(image, gpu::ImageLayout::kPresent, gpu::ImageLayout::kRenderTarget);
             cmd_buffer->ClearImage(image, 0.5f, 0.5f, 1.0f, 1.0f);
             cmd_buffer->BindGraphicsPipeline(pipeline);
+            cmd_buffer->SetVertexBuffer(vertex_buffer_);
             cmd_buffer->Draw(3, 0);
             cmd_buffer->TransitionBarrier(image, gpu::ImageLayout::kRenderTarget, gpu::ImageLayout::kPresent);
             cmd_buffer->End();
@@ -78,23 +95,7 @@ namespace vklabs
             fences_.push_back(device_->CreateFence());
         }
 
-        struct Vertex
-        {
-            float pos[3];
-            float color[3];
-        };
-
-        const std::vector<Vertex> vertices =
-        {
-            {{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}}
-        };
-
         /*
-        vertex_buffer_ = device_->CreateBuffer(vertices.size() * sizeof(Vertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        vertex_buffer_->Write(vertices.data());
-
         float vs_data[3] = { 1.0f, 0.0f, 0.0f };
         vs_uniform_buffer_ = device_->CreateBuffer(sizeof(vs_data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         vs_uniform_buffer_->Write(&vs_data);
@@ -103,26 +104,6 @@ namespace vklabs
         ps_uniform_buffer_ = device_->CreateBuffer(sizeof(ps_data), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         ps_uniform_buffer_->Write(&ps_data);
 
-        for (std::size_t i = 0; i < swapchain_images_count; ++i)
-        {
-            VulkanGraphicsPipelineState pipeline_state(settings.width, settings.height);
-            pipeline_state.SetVertexShader(vertex_shader);
-            pipeline_state.SetPixelShader(pixel_shader);
-            pipeline_state.SetColorAttachment(0, swapchain_->GetImage(i));
-
-            pipelines_[i] = device_->CreateGraphicsPipeline(pipeline_state);
-            pipelines_[i]->SetArg(0, 0, vs_uniform_buffer_);
-            pipelines_[i]->SetArg(0, 1, ps_uniform_buffer_);
-            pipelines_[i]->CommitArgs();
-
-            cmd_buffers_[i] = device_->CreateGraphicsCommandBuffer();
-            cmd_buffers_[i]->Begin();
-            cmd_buffers_[i]->BeginGraphics(pipelines_[i]);
-            cmd_buffers_[i]->BindVertexBuffer(vertex_buffer_);
-            cmd_buffers_[i]->Draw(vertices.size());
-            cmd_buffers_[i]->EndGraphics();
-            cmd_buffers_[i]->End();
-        }
         */
 
         glfwMakeContextCurrent(window_.get());
