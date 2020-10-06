@@ -139,13 +139,10 @@ namespace vklabs
             glfwSwapBuffers(window_.get());
             glfwPollEvents();
 
-            //if (frame_index == 0)
-            {
-                fences_[frame_index]->Wait();
-                queue.Submit(cmd_buffers_[frame_index], fences_[frame_index]);
-                swapchain_->Present();
-                frame_index = (frame_index + 1) % cmd_buffers_.size();
-            }
+            fences_[frame_index]->Wait();
+            queue.Submit(cmd_buffers_[frame_index], fences_[frame_index]);
+            swapchain_->Present();
+            frame_index = (frame_index + 1) % cmd_buffers_.size();
 
         }
 
