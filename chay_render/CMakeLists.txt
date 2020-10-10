@@ -13,6 +13,8 @@ set(SOURCES
     renderable.hpp
     mesh.hpp
     mesh.cpp
+    camera.hpp
+    camera.cpp
 )
 
 add_library(ChayRender STATIC ${SOURCES})
