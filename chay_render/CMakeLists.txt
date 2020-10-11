@@ -15,9 +15,19 @@ set(SOURCES
     mesh.cpp
     camera.hpp
     camera.cpp
+    scene.hpp
+    scene.cpp
 )
 
-add_library(ChayRender STATIC ${SOURCES})
+set(SHADER_SOURCES
+    shaders/common.h
+    shaders/shader.frag
+    shaders/shader.vert
+)
+
+source_group("shaders" FILES ${SHADER_SOURCES})
+
+add_library(ChayRender STATIC ${SOURCES} ${SHADER_SOURCES})
 target_include_directories(ChayRender PUBLIC .)
 target_include_directories(ChayRender PRIVATE ${ChayEngine_SOURCE_DIR}/dependencies/tinyobjloader)
 target_link_libraries(ChayRender GpuApi)
