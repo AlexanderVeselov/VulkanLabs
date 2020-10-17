@@ -17,6 +17,8 @@ set(SOURCES
     camera.cpp
     scene.hpp
     scene.cpp
+    obj_loader.hpp
+    obj_loader.cpp
 )
 
 set(SHADER_SOURCES
